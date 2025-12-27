@@ -18,6 +18,9 @@ export * from './supabase';
 // Export Gemini AI service
 export * from './gemini';
 
+// Export offline queue management
+export * from './offlineQueue';
+
 // Re-export commonly used types for convenience
 export type {
   Profile,

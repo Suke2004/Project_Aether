@@ -8,6 +8,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import { getSupabaseClient, dbHelpers, realtimeHelpers } from '../lib/supabase';
 import { Transaction, WalletContextType, Profile } from '../lib/types';
 import { useAuth } from './AuthContext';
+import { useOfflineQueue } from '../hooks';
 
 // Create the wallet context
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -23,6 +24,7 @@ interface WalletProviderProps {
  */
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const { user, profile, refreshProfile } = useAuth();
+  const offlineQueue = useOfflineQueue();
   const [balance, setBalance] = useState<number>(0);
   const [totalEarned, setTotalEarned] = useState<number>(0);
   const [totalSpent, setTotalSpent] = useState<number>(0);
@@ -140,7 +142,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   /**
    * Earn tokens and update balance
-   * Requirements: 1.3, 1.5
+   * Requirements: 1.3, 1.5, 4.4, 8.1
    */
   const earnTokens = async (amount: number, description: string, proofUrl?: string): Promise<void> => {
     if (!user || !profile) {
@@ -158,37 +160,69 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
 
-      // Create transaction record
-      const transaction: Omit<Transaction, 'id'> = {
-        user_id: profile.id,
-        amount,
-        type: 'earn',
-        description: description.trim(),
-        proof_image_url: proofUrl,
-        timestamp: new Date().toISOString(),
-      };
+      // Check if device is online
+      if (offlineQueue.status.isOnline) {
+        // Online: Process transaction immediately
+        const transaction: Omit<Transaction, 'id'> = {
+          user_id: profile.id,
+          amount,
+          type: 'earn',
+          description: description.trim(),
+          proof_image_url: proofUrl,
+          timestamp: new Date().toISOString(),
+        };
 
-      // Insert transaction into database
-      const createdTransaction = await dbHelpers.createTransaction(transaction);
+        // Insert transaction into database
+        const createdTransaction = await dbHelpers.createTransaction(transaction);
 
-      // Update profile balance and totals
-      const newBalance = profile.balance + amount;
-      const newTotalEarned = profile.total_earned + amount;
+        // Update profile balance and totals
+        const newBalance = profile.balance + amount;
+        const newTotalEarned = profile.total_earned + amount;
 
-      const updatedProfile = await dbHelpers.updateProfile(profile.id, {
-        balance: newBalance,
-        total_earned: newTotalEarned,
-      });
+        const updatedProfile = await dbHelpers.updateProfile(profile.id, {
+          balance: newBalance,
+          total_earned: newTotalEarned,
+        });
 
-      // Update local state immediately (real-time subscription will also update)
-      setBalance(updatedProfile.balance);
-      setTotalEarned(updatedProfile.total_earned);
-      setTransactions(prev => [createdTransaction, ...prev]);
+        // Update local state immediately (real-time subscription will also update)
+        setBalance(updatedProfile.balance);
+        setTotalEarned(updatedProfile.total_earned);
+        setTransactions(prev => [createdTransaction, ...prev]);
 
-      // Refresh the auth profile to keep it in sync
-      await refreshProfile();
+        // Refresh the auth profile to keep it in sync
+        await refreshProfile();
 
-      console.log(`Earned ${amount} tokens for user ${profile.id}. New balance: ${updatedProfile.balance}`);
+        console.log(`Earned ${amount} tokens for user ${profile.id}. New balance: ${updatedProfile.balance}`);
+      } else {
+        // Offline: Queue transaction for later sync
+        console.log('Device is offline, queuing earn transaction');
+        
+        await offlineQueue.queueTransaction('earn', amount, description.trim(), {
+          proofImageUrl: proofUrl,
+        });
+
+        // Update local state optimistically
+        const newBalance = balance + amount;
+        const newTotalEarned = totalEarned + amount;
+        
+        setBalance(newBalance);
+        setTotalEarned(newTotalEarned);
+
+        // Create a temporary transaction for local display
+        const tempTransaction: Transaction = {
+          id: `temp_${Date.now()}`,
+          user_id: profile.id,
+          amount,
+          type: 'earn',
+          description: description.trim(),
+          proof_image_url: proofUrl,
+          timestamp: new Date().toISOString(),
+        };
+        
+        setTransactions(prev => [tempTransaction, ...prev]);
+
+        console.log(`Queued earn transaction for ${amount} tokens (offline mode)`);
+      }
     } catch (error) {
       console.error('Failed to earn tokens:', error);
       throw error;
@@ -199,7 +233,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   /**
    * Spend tokens and update balance
-   * Requirements: 2.1, 3.2
+   * Requirements: 2.1, 3.2, 4.4, 8.1
    */
   const spendTokens = async (amount: number, description: string, appName?: string): Promise<void> => {
     if (!user || !profile) {
@@ -214,44 +248,76 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       throw new Error('Description is required for spending tokens');
     }
 
-    if (profile.balance < amount) {
-      throw new Error(`Insufficient balance. Current balance: ${profile.balance}, Required: ${amount}`);
+    if (balance < amount) {
+      throw new Error(`Insufficient balance. Current balance: ${balance}, Required: ${amount}`);
     }
 
     try {
       setIsLoading(true);
 
-      // Create transaction record
-      const transaction: Omit<Transaction, 'id'> = {
-        user_id: profile.id,
-        amount,
-        type: 'spend',
-        description: description.trim(),
-        app_name: appName,
-        timestamp: new Date().toISOString(),
-      };
+      // Check if device is online
+      if (offlineQueue.status.isOnline) {
+        // Online: Process transaction immediately
+        const transaction: Omit<Transaction, 'id'> = {
+          user_id: profile.id,
+          amount,
+          type: 'spend',
+          description: description.trim(),
+          app_name: appName,
+          timestamp: new Date().toISOString(),
+        };
 
-      // Insert transaction into database
-      const createdTransaction = await dbHelpers.createTransaction(transaction);
+        // Insert transaction into database
+        const createdTransaction = await dbHelpers.createTransaction(transaction);
 
-      // Update profile balance and totals
-      const newBalance = profile.balance - amount;
-      const newTotalSpent = profile.total_spent + amount;
+        // Update profile balance and totals
+        const newBalance = profile.balance - amount;
+        const newTotalSpent = profile.total_spent + amount;
 
-      const updatedProfile = await dbHelpers.updateProfile(profile.id, {
-        balance: newBalance,
-        total_spent: newTotalSpent,
-      });
+        const updatedProfile = await dbHelpers.updateProfile(profile.id, {
+          balance: newBalance,
+          total_spent: newTotalSpent,
+        });
 
-      // Update local state immediately (real-time subscription will also update)
-      setBalance(updatedProfile.balance);
-      setTotalSpent(updatedProfile.total_spent);
-      setTransactions(prev => [createdTransaction, ...prev]);
+        // Update local state immediately (real-time subscription will also update)
+        setBalance(updatedProfile.balance);
+        setTotalSpent(updatedProfile.total_spent);
+        setTransactions(prev => [createdTransaction, ...prev]);
 
-      // Refresh the auth profile to keep it in sync
-      await refreshProfile();
+        // Refresh the auth profile to keep it in sync
+        await refreshProfile();
 
-      console.log(`Spent ${amount} tokens for user ${profile.id}. New balance: ${updatedProfile.balance}`);
+        console.log(`Spent ${amount} tokens for user ${profile.id}. New balance: ${updatedProfile.balance}`);
+      } else {
+        // Offline: Queue transaction for later sync
+        console.log('Device is offline, queuing spend transaction');
+        
+        await offlineQueue.queueTransaction('spend', amount, description.trim(), {
+          appName,
+        });
+
+        // Update local state optimistically
+        const newBalance = balance - amount;
+        const newTotalSpent = totalSpent + amount;
+        
+        setBalance(newBalance);
+        setTotalSpent(newTotalSpent);
+
+        // Create a temporary transaction for local display
+        const tempTransaction: Transaction = {
+          id: `temp_${Date.now()}`,
+          user_id: profile.id,
+          amount,
+          type: 'spend',
+          description: description.trim(),
+          app_name: appName,
+          timestamp: new Date().toISOString(),
+        };
+        
+        setTransactions(prev => [tempTransaction, ...prev]);
+
+        console.log(`Queued spend transaction for ${amount} tokens (offline mode)`);
+      }
     } catch (error) {
       console.error('Failed to spend tokens:', error);
       throw error;
@@ -287,6 +353,28 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
+  /**
+   * Sync effect: refresh wallet state when offline transactions are synced
+   */
+  useEffect(() => {
+    if (offlineQueue.isInitialized && profile) {
+      // Listen for sync completion and refresh wallet state
+      const handleSyncCompletion = async () => {
+        if (offlineQueue.status.unsyncedCount === 0 && offlineQueue.status.queueLength > 0) {
+          console.log('Offline sync completed, refreshing wallet state');
+          await refreshBalance();
+        }
+      };
+
+      // Check sync status periodically
+      const syncCheckInterval = setInterval(handleSyncCompletion, 5000);
+
+      return () => {
+        clearInterval(syncCheckInterval);
+      };
+    }
+  }, [offlineQueue.isInitialized, offlineQueue.status.unsyncedCount, offlineQueue.status.queueLength, profile, refreshBalance]);
+
   // Context value with all wallet functions and state
   const value: WalletContextType = {
     balance,
@@ -297,6 +385,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     earnTokens,
     spendTokens,
     refreshBalance,
+    offlineStatus: {
+      queueLength: offlineQueue.status.queueLength,
+      unsyncedCount: offlineQueue.status.unsyncedCount,
+      isOnline: offlineQueue.status.isOnline,
+      isSyncing: offlineQueue.status.isSyncing,
+    },
+    syncOfflineTransactions: offlineQueue.syncNow,
   };
 
   return (

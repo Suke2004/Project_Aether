@@ -49,8 +49,16 @@ export interface WalletContextType {
   transactions: Transaction[];
   isLoading: boolean;
   earnTokens: (amount: number, description: string, proofUrl?: string) => Promise<void>;
-  spendTokens: (amount: number, description: string) => Promise<void>;
+  spendTokens: (amount: number, description: string, appName?: string) => Promise<void>;
   refreshBalance: () => Promise<void>;
+  // Offline queue status
+  offlineStatus: {
+    queueLength: number;
+    unsyncedCount: number;
+    isOnline: boolean;
+    isSyncing: boolean;
+  };
+  syncOfflineTransactions: () => Promise<{ success: number; failed: number }>;
 }
 
 export interface AuthContextType {
