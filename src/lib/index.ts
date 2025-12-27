@@ -12,6 +12,9 @@ export * from './config';
 // Export utilities
 export * from './utils';
 
+// Export web utilities
+export * from './webUtils';
+
 // Export Supabase client and helpers
 export * from './supabase';
 

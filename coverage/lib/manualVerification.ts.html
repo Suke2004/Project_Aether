@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/29</span>
+                <span class='fraction'>0/19</span>
             </div>
         
             
@@ -895,7 +895,7 @@ export interface ManualVerificationResult {
       const requests = <span class="cstat-no" title="statement not covered" >await this.getStoredRequests();</span>
       const request = <span class="cstat-no" title="statement not covered" >requests.find(<span class="fstat-no" title="function not covered" >r </span>=&gt; <span class="cstat-no" title="statement not covered" >r.id === requestId)</span>;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (!request) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!request) {</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
       }
 &nbsp;
@@ -904,7 +904,7 @@ export interface ManualVerificationResult {
       const now = <span class="cstat-no" title="statement not covered" >Date.now();</span>
       const expiryTime = <span class="cstat-no" title="statement not covered" >this.EXPIRY_HOURS * 60 * 60 * 1000;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (now - requestTime &gt; expiryTime &amp;&amp; request.status === 'pending') {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (now - requestTime &gt; expiryTime &amp;&amp; request.status === 'pending') {</span>
 <span class="cstat-no" title="statement not covered" >        request.status = 'expired';</span>
 <span class="cstat-no" title="statement not covered" >        await this.updateVerificationRequest(request);</span>
       }
@@ -928,13 +928,13 @@ export interface ManualVerificationResult {
       const requests = <span class="cstat-no" title="statement not covered" >await this.getStoredRequests();</span>
       const requestIndex = <span class="cstat-no" title="statement not covered" >requests.findIndex(<span class="fstat-no" title="function not covered" >r </span>=&gt; <span class="cstat-no" title="statement not covered" >r.id === requestId)</span>;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (requestIndex === -1) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (requestIndex === -1) {</span>
 <span class="cstat-no" title="statement not covered" >        throw new Error('Verification request not found');</span>
       }
 &nbsp;
       const request = <span class="cstat-no" title="statement not covered" >requests[requestIndex];</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (request.status !== 'pending') {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (request.status !== 'pending') {</span>
 <span class="cstat-no" title="statement not covered" >        throw new Error('Verification request is no longer pending');</span>
       }
 &nbsp;
@@ -967,7 +967,7 @@ export interface ManualVerificationResult {
       let pendingRequests = <span class="cstat-no" title="statement not covered" >requests.filter(<span class="fstat-no" title="function not covered" >r </span>=&gt; <span class="cstat-no" title="statement not covered" >r.status === 'pending')</span>;</span>
 &nbsp;
       // If parentId is provided, filter by child relationship (simplified for demo)
-<span class="cstat-no" title="statement not covered" >      if (parentId) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (parentId) {</span>
         // In a real app, you'd check parent-child relationships
         // For now, return all pending requests
       }
@@ -1001,11 +1001,11 @@ export interface ManualVerificationResult {
 <span class="cstat-no" title="statement not covered" >    while (Date.now() - startTime &lt; timeoutMs) {</span>
       const request = <span class="cstat-no" title="statement not covered" >await this.checkVerificationStatus(requestId);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (!request) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!request) {</span>
 <span class="cstat-no" title="statement not covered" >        throw new Error('Verification request not found');</span>
       }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (request.status === 'approved') {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (request.status === 'approved') {</span>
 <span class="cstat-no" title="statement not covered" >        return {</span>
           approved: true,
           reasoning: request.parentResponse?.reasoning,
@@ -1013,7 +1013,7 @@ export interface ManualVerificationResult {
         };
       }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (request.status === 'rejected') {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (request.status === 'rejected') {</span>
 <span class="cstat-no" title="statement not covered" >        return {</span>
           approved: false,
           reasoning: request.parentResponse?.reasoning,
@@ -1021,7 +1021,7 @@ export interface ManualVerificationResult {
         };
       }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (request.status === 'expired') {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (request.status === 'expired') {</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
       }
 &nbsp;
@@ -1120,7 +1120,7 @@ export interface ManualVerificationResult {
       const requests = <span class="cstat-no" title="statement not covered" >await this.getStoredRequests();</span>
       const index = <span class="cstat-no" title="statement not covered" >requests.findIndex(<span class="fstat-no" title="function not covered" >r </span>=&gt; <span class="cstat-no" title="statement not covered" >r.id === updatedRequest.id)</span>;</span>
       
-<span class="cstat-no" title="statement not covered" >      if (index !== -1) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (index !== -1) {</span>
 <span class="cstat-no" title="statement not covered" >        requests[index] = updatedRequest;</span>
 <span class="cstat-no" title="statement not covered" >        await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(requests));</span>
       }
@@ -1201,7 +1201,7 @@ export const <span class="cstat-no" title="statement not covered" >useManualVeri
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-27T08:54:50.024Z
+                at 2025-12-27T09:49:00.373Z
             </div>
         <script src="../prettify.js"></script>
         <script>

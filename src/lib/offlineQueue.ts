@@ -5,6 +5,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { QueuedTransaction, Transaction, Profile } from './types';
 import { generateOfflineId, safeJsonParse } from './utils';
 import { dbHelpers } from './supabase';
@@ -18,7 +19,7 @@ const STORAGE_KEYS = {
 
 // Network connectivity check configuration
 const CONNECTIVITY_CONFIG = {
-  CHECK_URL: 'https://www.google.com/generate_204', // Google's connectivity check endpoint
+  CHECK_URL: 'https://www.google.com/generate_204', // Google's connectivity check endpoint (mobile only)
   TIMEOUT: 5000, // 5 seconds timeout
   RETRY_INTERVAL: 30000, // 30 seconds between sync attempts
   MAX_RETRIES: 3, // Maximum retry attempts with exponential backoff
@@ -30,9 +31,23 @@ const CONNECTIVITY_CONFIG = {
 export const networkHelpers = {
   /**
    * Check if device has network connectivity
+   * Uses platform-specific methods to avoid CORS issues on web
    */
   isOnline: async (): Promise<boolean> => {
     try {
+      // Web-specific network detection
+      if (Platform.OS === 'web') {
+        // Use the Navigator.onLine API for web
+        if (typeof navigator !== 'undefined' && 'onLine' in navigator) {
+          return navigator.onLine;
+        }
+        
+        // Fallback: assume online if we can't detect (better UX)
+        console.log('🌐 Web network detection: assuming online (no navigator.onLine)');
+        return true;
+      }
+
+      // Mobile network detection using connectivity check
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), CONNECTIVITY_CONFIG.TIMEOUT);
 
@@ -45,6 +60,12 @@ export const networkHelpers = {
       clearTimeout(timeoutId);
       return response.ok;
     } catch (error) {
+      // For web, if we get CORS errors, assume we're online
+      if (Platform.OS === 'web') {
+        console.log('🌐 Web network check failed (likely CORS), assuming online');
+        return true;
+      }
+      
       console.log('Network connectivity check failed:', error);
       return false;
     }

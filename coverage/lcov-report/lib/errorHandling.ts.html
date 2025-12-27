@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/137</span>
+                <span class='fraction'>0/110</span>
             </div>
         
             
@@ -1225,7 +1225,7 @@ export interface DataCorruptionError extends Error {
       logError = <span class="branch-0 cbranch-no" title="branch not covered" >true,</span>
     } = <span class="cstat-no" title="statement not covered" >options;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (logError) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (logError) {</span>
 <span class="cstat-no" title="statement not covered" >      console.error('App launch error:', {</span>
         type: error.type,
         appName: error.appName,
@@ -1235,7 +1235,7 @@ export interface DataCorruptionError extends Error {
     }
 &nbsp;
     // Auto-refund tokens if specified
-<span class="cstat-no" title="statement not covered" >    if (autoRefund &amp;&amp; error.tokensToRefund &amp;&amp; error.tokensToRefund &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (autoRefund &amp;&amp; error.tokensToRefund &amp;&amp; error.tokensToRefund &gt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
 <span class="cstat-no" title="statement not covered" >        await refundTokens(error.tokensToRefund, `Refund for failed ${error.appName} launch`);</span>
 <span class="cstat-no" title="statement not covered" >        console.log(`Refunded ${error.tokensToRefund} tokens for failed ${error.appName} launch`);</span>
@@ -1244,16 +1244,16 @@ export interface DataCorruptionError extends Error {
       }
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (showAlert) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (showAlert) {</span>
       const alternatives = <span class="cstat-no" title="statement not covered" >suggestAlternatives ? this.getAlternativeApps(error.appName) : [];</span>
       
       let message = <span class="cstat-no" title="statement not covered" >this.getErrorMessage(error);</span>
       
-<span class="cstat-no" title="statement not covered" >      if (error.tokensToRefund &amp;&amp; error.tokensToRefund &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error.tokensToRefund &amp;&amp; error.tokensToRefund &gt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >        message += `\n\n${error.tokensToRefund} tokens have been refunded to your account.`;</span>
       }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (alternatives.length &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (alternatives.length &gt; 0) {</span>
         const altNames = <span class="cstat-no" title="statement not covered" >alternatives.slice(0, 3).map(<span class="fstat-no" title="function not covered" >app </span>=&gt; <span class="cstat-no" title="statement not covered" >app.name)</span>.join(', ');</span>
 <span class="cstat-no" title="statement not covered" >        message += `\n\nTry these alternatives: ${altNames}`;</span>
       }
@@ -1288,7 +1288,7 @@ export interface DataCorruptionError extends Error {
     // Find the category of the failed app and suggest alternatives
 <span class="cstat-no" title="statement not covered" >    for (const [category, apps] of Object.entries(this.alternativeApps)) {</span>
       const failedApp = <span class="cstat-no" title="statement not covered" >apps.find(<span class="fstat-no" title="function not covered" >app </span>=&gt; <span class="cstat-no" title="statement not covered" >app.name === failedAppName)</span>;</span>
-<span class="cstat-no" title="statement not covered" >      if (failedApp) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (failedApp) {</span>
 <span class="cstat-no" title="statement not covered" >        return apps.filter(<span class="fstat-no" title="function not covered" >app </span>=&gt; <span class="cstat-no" title="statement not covered" >app.name !== failedAppName)</span>;</span>
       }
     }
@@ -1336,7 +1336,7 @@ export interface DataCorruptionError extends Error {
   ): Promise&lt;{ shouldRetry: boolean; manualVerificationRequested: boolean }&gt; {
     const { showAlert = <span class="branch-0 cbranch-no" title="branch not covered" >true,</span> logError = <span class="branch-0 cbranch-no" title="branch not covered" >true </span>} = <span class="cstat-no" title="statement not covered" >options;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (logError) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (logError) {</span>
 <span class="cstat-no" title="statement not covered" >      console.error('AI service error:', {</span>
         type: error.type,
         retryable: error.retryable,
@@ -1349,13 +1349,13 @@ export interface DataCorruptionError extends Error {
     let manualVerificationRequested = <span class="cstat-no" title="statement not covered" >false;</span>
 &nbsp;
     // Determine if we should retry based on error type
-<span class="cstat-no" title="statement not covered" >    if (error.retryable &amp;&amp; (error.type === 'TIMEOUT' || error.type === 'NETWORK_ERROR')) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (error.retryable &amp;&amp; (error.type === 'TIMEOUT' || error.type === 'NETWORK_ERROR')) {</span>
 <span class="cstat-no" title="statement not covered" >      shouldRetry = true;</span>
     }
 &nbsp;
     // For non-retryable errors or after max retries, offer manual verification
 <span class="cstat-no" title="statement not covered" >    if (!shouldRetry &amp;&amp; requestManualVerification) {</span>
-<span class="cstat-no" title="statement not covered" >      if (showAlert) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (showAlert) {</span>
 <span class="cstat-no" title="statement not covered" >        Alert.alert(</span>
           'AI Verification Unavailable',
           this.getAIErrorMessage(error),
@@ -1374,7 +1374,7 @@ export interface DataCorruptionError extends Error {
           ]
         );
       }
-    } else <span class="cstat-no" title="statement not covered" >if (showAlert &amp;&amp; !shouldRetry) {</span>
+    } else <span class="cstat-no" title="statement not covered" ><span class="missing-if-branch" title="if path not taken" >I</span>if (showAlert &amp;&amp; !shouldRetry) {</span>
 <span class="cstat-no" title="statement not covered" >      Alert.alert(</span>
         'AI Service Error',
         this.getAIErrorMessage(error),
@@ -1416,12 +1416,12 @@ export interface DataCorruptionError extends Error {
 <span class="cstat-no" title="statement not covered" >        lastError = error instanceof Error ? error : new Error('Unknown error');</span>
         
         // Don't retry on non-retryable errors
-<span class="cstat-no" title="statement not covered" >        if (error instanceof Error &amp;&amp; 'retryable' in error &amp;&amp; !(error as any).retryable) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (error instanceof Error &amp;&amp; 'retryable' in error &amp;&amp; !(error as any).retryable) {</span>
 <span class="cstat-no" title="statement not covered" >          throw lastError;</span>
         }
 &nbsp;
         // If this is the last attempt, throw the error
-<span class="cstat-no" title="statement not covered" >        if (attempt === maxRetries) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (attempt === maxRetries) {</span>
 <span class="cstat-no" title="statement not covered" >          throw lastError;</span>
         }
 &nbsp;
@@ -1463,7 +1463,7 @@ export interface DataCorruptionError extends Error {
   ): Promise&lt;{ recovered: boolean; backupRestored: boolean }&gt; {
     const { showAlert = <span class="branch-0 cbranch-no" title="branch not covered" >true,</span> logError = <span class="branch-0 cbranch-no" title="branch not covered" >true </span>} = <span class="cstat-no" title="statement not covered" >options;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (logError) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (logError) {</span>
 <span class="cstat-no" title="statement not covered" >      console.error('Data corruption detected:', {</span>
         type: error.type,
         severity: error.severity,
@@ -1477,16 +1477,16 @@ export interface DataCorruptionError extends Error {
     let backupRestored = <span class="cstat-no" title="statement not covered" >false;</span>
 &nbsp;
     // Attempt recovery based on severity and availability
-<span class="cstat-no" title="statement not covered" >    if (error.recoverable &amp;&amp; error.backupAvailable &amp;&amp; restoreFromBackup) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (error.recoverable &amp;&amp; error.backupAvailable &amp;&amp; restoreFromBackup) {</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
 <span class="cstat-no" title="statement not covered" >        backupRestored = await restoreFromBackup();</span>
 <span class="cstat-no" title="statement not covered" >        recovered = backupRestored;</span>
         
-<span class="cstat-no" title="statement not covered" >        if (backupRestored) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (backupRestored) {</span>
 <span class="cstat-no" title="statement not covered" >          console.log('Successfully restored from backup');</span>
           
           // Notify parent of recovery action
-<span class="cstat-no" title="statement not covered" >          if (notifyParent) {</span>
+<span class="cstat-no" title="statement not covered" >          <span class="missing-if-branch" title="if path not taken" >I</span>if (notifyParent) {</span>
 <span class="cstat-no" title="statement not covered" >            await notifyParent(</span>
               `Data corruption was detected and automatically recovered from backup. Type: ${error.type}, Severity: ${error.severity}`
             );
@@ -1497,7 +1497,7 @@ export interface DataCorruptionError extends Error {
       }
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (showAlert) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (showAlert) {</span>
 <span class="cstat-no" title="statement not covered" >      if (recovered) {</span>
 <span class="cstat-no" title="statement not covered" >        Alert.alert(</span>
           'Data Recovered',
@@ -1545,7 +1545,7 @@ export interface DataCorruptionError extends Error {
   }
 &nbsp;
 <span class="fstat-no" title="function not covered" >  static </span>validateProfileData(profile: any): DataCorruptionError | null {
-<span class="cstat-no" title="statement not covered" >    if (!profile) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!profile) {</span>
 <span class="cstat-no" title="statement not covered" >      return this.createDataCorruptionError(</span>
         'PROFILE_CORRUPTION',
         'Profile data is missing',
@@ -1554,7 +1554,7 @@ export interface DataCorruptionError extends Error {
       );
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (typeof profile.balance !== 'number' || profile.balance &lt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof profile.balance !== 'number' || profile.balance &lt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >      return this.createDataCorruptionError(</span>
         'PROFILE_CORRUPTION',
         'Profile balance is invalid',
@@ -1563,7 +1563,7 @@ export interface DataCorruptionError extends Error {
       );
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (typeof profile.total_earned !== 'number' || profile.total_earned &lt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof profile.total_earned !== 'number' || profile.total_earned &lt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >      return this.createDataCorruptionError(</span>
         'PROFILE_CORRUPTION',
         'Profile total_earned is invalid',
@@ -1572,7 +1572,7 @@ export interface DataCorruptionError extends Error {
       );
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (typeof profile.total_spent !== 'number' || profile.total_spent &lt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof profile.total_spent !== 'number' || profile.total_spent &lt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >      return this.createDataCorruptionError(</span>
         'PROFILE_CORRUPTION',
         'Profile total_spent is invalid',
@@ -1582,7 +1582,7 @@ export interface DataCorruptionError extends Error {
     }
 &nbsp;
     // Check for logical inconsistencies
-<span class="cstat-no" title="statement not covered" >    if (profile.balance + profile.total_spent &gt; profile.total_earned) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (profile.balance + profile.total_spent &gt; profile.total_earned) {</span>
 <span class="cstat-no" title="statement not covered" >      return this.createDataCorruptionError(</span>
         'PROFILE_CORRUPTION',
         'Profile balance calculations are inconsistent',
@@ -1595,7 +1595,7 @@ export interface DataCorruptionError extends Error {
   }
 &nbsp;
 <span class="fstat-no" title="function not covered" >  static </span>validateTransactionData(transaction: any): DataCorruptionError | null {
-<span class="cstat-no" title="statement not covered" >    if (!transaction) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!transaction) {</span>
 <span class="cstat-no" title="statement not covered" >      return this.createDataCorruptionError(</span>
         'TRANSACTION_CORRUPTION',
         'Transaction data is missing',
@@ -1604,7 +1604,7 @@ export interface DataCorruptionError extends Error {
       );
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (!transaction.id || !transaction.user_id) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!transaction.id || !transaction.user_id) {</span>
 <span class="cstat-no" title="statement not covered" >      return this.createDataCorruptionError(</span>
         'TRANSACTION_CORRUPTION',
         'Transaction missing required IDs',
@@ -1613,7 +1613,7 @@ export interface DataCorruptionError extends Error {
       );
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (typeof transaction.amount !== 'number' || transaction.amount &lt;= 0) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof transaction.amount !== 'number' || transaction.amount &lt;= 0) {</span>
 <span class="cstat-no" title="statement not covered" >      return this.createDataCorruptionError(</span>
         'TRANSACTION_CORRUPTION',
         'Transaction amount is invalid',
@@ -1622,7 +1622,7 @@ export interface DataCorruptionError extends Error {
       );
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (!['earn', 'spend'].includes(transaction.type)) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!['earn', 'spend'].includes(transaction.type)) {</span>
 <span class="cstat-no" title="statement not covered" >      return this.createDataCorruptionError(</span>
         'TRANSACTION_CORRUPTION',
         'Transaction type is invalid',
@@ -1652,7 +1652,7 @@ export interface DataCorruptionError extends Error {
       } catch (error) {
 <span class="cstat-no" title="statement not covered" >        lastError = error instanceof Error ? error : new Error('Unknown error');</span>
         
-<span class="cstat-no" title="statement not covered" >        if (attempt &lt;= maxRetries) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (attempt &lt;= maxRetries) {</span>
 <span class="cstat-no" title="statement not covered" >          await errorHandler(lastError);</span>
           // Small delay before retry
 <span class="cstat-no" title="statement not covered" >          await new Promise(<span class="fstat-no" title="function not covered" >resolve </span>=&gt; <span class="cstat-no" title="statement not covered" >setTimeout(resolve, 1000))</span>;</span>
@@ -1684,7 +1684,7 @@ export interface DataCorruptionError extends Error {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-27T08:54:49.941Z
+                at 2025-12-27T09:49:00.299Z
             </div>
         <script src="../prettify.js"></script>
         <script>

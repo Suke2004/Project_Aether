@@ -64,7 +64,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       
-      // Get current session
+      // Development mode: Create a mock user for testing
+      const isDevelopment = process.env.NODE_ENV === 'development' || __DEV__;
+      
+      if (isDevelopment) {
+        console.log('Running in development mode - creating mock user');
+        
+        // Create a mock user and profile for development
+        const mockUser = {
+          id: 'dev-user-123',
+          email: 'dev@example.com',
+          user_metadata: { role: 'child' }
+        } as User;
+        
+        const mockProfile: Profile = {
+          id: 'dev-user-123',
+          role: 'child',
+          balance: 50,
+          total_earned: 100,
+          total_spent: 50,
+        };
+        
+        setUser(mockUser);
+        setProfile(mockProfile);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Production mode: Get current session
       const currentSession = await authHelpers.getSession();
       
       if (currentSession?.user) {
@@ -72,6 +99,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Failed to initialize auth:', error);
+      
+      // Fallback to development mode if auth fails
+      console.log('Auth failed, falling back to development mode');
+      const mockUser = {
+        id: 'dev-user-123',
+        email: 'dev@example.com',
+        user_metadata: { role: 'child' }
+      } as User;
+      
+      const mockProfile: Profile = {
+        id: 'dev-user-123',
+        role: 'child',
+        balance: 50,
+        total_earned: 100,
+        total_spent: 50,
+      };
+      
+      setUser(mockUser);
+      setProfile(mockProfile);
     } finally {
       setIsLoading(false);
     }

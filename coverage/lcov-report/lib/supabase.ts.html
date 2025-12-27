@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/52</span>
+                <span class='fraction'>0/30</span>
             </div>
         
             
@@ -1194,9 +1194,9 @@ let supabase: SupabaseClient | null = <span class="cstat-no" title="statement no
  * Implements singleton pattern for efficient resource usage
  */
 export const <span class="cstat-no" title="statement not covered" >getSupabaseClient = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>): SupabaseClient =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  if (!supabase) {</span>
+<span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (!supabase) {</span>
     // Validate configuration before creating client
-<span class="cstat-no" title="statement not covered" >    if (!validateConfig()) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!validateConfig()) {</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('Invalid Supabase configuration. Please check your environment variables.');</span>
     }
 &nbsp;
@@ -1249,13 +1249,13 @@ export const <span class="cstat-no" title="statement not covered" >authHelpers =
         },
       });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Sign up error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
 &nbsp;
       // Create profile after successful signup
-<span class="cstat-no" title="statement not covered" >      if (data.user) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (data.user) {</span>
 <span class="cstat-no" title="statement not covered" >        await createUserProfile(data.user.id, role);</span>
       }
 &nbsp;
@@ -1278,7 +1278,7 @@ export const <span class="cstat-no" title="statement not covered" >authHelpers =
         password,
       });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Sign in error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1299,7 +1299,7 @@ export const <span class="cstat-no" title="statement not covered" >authHelpers =
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const { error } = <span class="cstat-no" title="statement not covered" >await client.auth.signOut();</span>
       
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Sign out error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1318,7 +1318,7 @@ export const <span class="cstat-no" title="statement not covered" >authHelpers =
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const { data: { session }, error } = <span class="cstat-no" title="statement not covered" >await client.auth.getSession();</span>
       
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Get session error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1339,7 +1339,7 @@ export const <span class="cstat-no" title="statement not covered" >authHelpers =
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const { data: { user }, error } = <span class="cstat-no" title="statement not covered" >await client.auth.getUser();</span>
       
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Get user error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1369,8 +1369,8 @@ export const <span class="cstat-no" title="statement not covered" >dbHelpers = {
         .eq('id', userId)
         .single();
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
-<span class="cstat-no" title="statement not covered" >        if (error.code === 'PGRST116') {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (error.code === 'PGRST116') {</span>
           // No rows returned
 <span class="cstat-no" title="statement not covered" >          return null;</span>
         }
@@ -1402,7 +1402,7 @@ export const <span class="cstat-no" title="statement not covered" >dbHelpers = {
         .select()
         .single();
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Update profile error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1427,13 +1427,13 @@ export const <span class="cstat-no" title="statement not covered" >dbHelpers = {
         .eq('user_id', userId)
         .order('timestamp', { ascending: false });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (limit) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (limit) {</span>
 <span class="cstat-no" title="statement not covered" >        query = query.limit(limit);</span>
       }
 &nbsp;
       const { data, error } = <span class="cstat-no" title="statement not covered" >await query;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Get transactions error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1458,7 +1458,7 @@ export const <span class="cstat-no" title="statement not covered" >dbHelpers = {
         .select()
         .single();
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Create transaction error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1483,7 +1483,7 @@ export const <span class="cstat-no" title="statement not covered" >dbHelpers = {
         .eq('is_active', true)
         .order('name');
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Get quest types error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1509,7 +1509,7 @@ export const <span class="cstat-no" title="statement not covered" >dbHelpers = {
         .eq('role', 'child')
         .order('created_at', { ascending: false });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Get child profiles error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1533,7 +1533,7 @@ export const <span class="cstat-no" title="statement not covered" >dbHelpers = {
         .select('*')
         .order('name');
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Get all quest types error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1561,7 +1561,7 @@ export const <span class="cstat-no" title="statement not covered" >dbHelpers = {
         .select()
         .single();
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Create quest type error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1590,7 +1590,7 @@ export const <span class="cstat-no" title="statement not covered" >dbHelpers = {
         .select()
         .single();
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Update quest type error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1617,7 +1617,7 @@ export const <span class="cstat-no" title="statement not covered" >dbHelpers = {
         })
         .eq('id', questId);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Delete quest type error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1639,7 +1639,7 @@ export const <span class="cstat-no" title="statement not covered" >dbHelpers = {
         .delete()
         .eq('id', questId);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (error) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Permanently delete quest type error:', error);</span>
 <span class="cstat-no" title="statement not covered" >        throw error;</span>
       }
@@ -1720,7 +1720,7 @@ const createUserProfile = <span class="cstat-no" title="statement not covered" >
       .select()
       .single();
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (error) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >      console.error('Create profile error:', error);</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
@@ -1741,7 +1741,7 @@ export { <span class="cstat-no" title="statement not covered" >supabase </span>}
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-27T08:54:49.941Z
+                at 2025-12-27T09:49:00.299Z
             </div>
         <script src="../prettify.js"></script>
         <script>

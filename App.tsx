@@ -1,6 +1,6 @@
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, Text, View, ActivityIndicator, Alert, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -16,6 +16,9 @@ import {
   LockScreen, 
   ParentDashboard 
 } from './src/screens';
+
+// Web compatibility utilities
+import { configureWebCompatibility } from './src/lib/webUtils';
 
 // Types
 export type RootStackParamList = {
@@ -173,6 +176,11 @@ const AppNavigator: React.FC = () => {
 
 // Main App Component
 export default function App() {
+  // Configure web compatibility on app start
+  useEffect(() => {
+    configureWebCompatibility();
+  }, []);
+
   return (
     <ErrorBoundary>
       <SafeAreaProvider>

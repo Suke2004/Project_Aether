@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/62</span>
+                <span class='fraction'>0/38</span>
             </div>
         
             
@@ -1168,9 +1168,9 @@ export interface IntegrityCheckResult {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    try {</span>
       // Check profile data integrity
-<span class="cstat-no" title="statement not covered" >      if (profile) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (profile) {</span>
         const profileError = <span class="cstat-no" title="statement not covered" >DataCorruptionHandler.validateProfileData(profile);</span>
-<span class="cstat-no" title="statement not covered" >        if (profileError) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (profileError) {</span>
 <span class="cstat-no" title="statement not covered" >          errors.push(profileError);</span>
         }
       }
@@ -1178,13 +1178,13 @@ export interface IntegrityCheckResult {
       // Check transaction data integrity
 <span class="cstat-no" title="statement not covered" >      for (const transaction of transactions) {</span>
         const transactionError = <span class="cstat-no" title="statement not covered" >DataCorruptionHandler.validateTransactionData(transaction);</span>
-<span class="cstat-no" title="statement not covered" >        if (transactionError) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (transactionError) {</span>
 <span class="cstat-no" title="statement not covered" >          errors.push(transactionError);</span>
         }
       }
 &nbsp;
       // Check logical consistency between profile and transactions
-<span class="cstat-no" title="statement not covered" >      if (profile &amp;&amp; transactions.length &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (profile &amp;&amp; transactions.length &gt; 0) {</span>
         const consistencyErrors = <span class="cstat-no" title="statement not covered" >this.validateDataConsistency(profile, transactions);</span>
 <span class="cstat-no" title="statement not covered" >        errors.push(...consistencyErrors);</span>
       }
@@ -1275,7 +1275,7 @@ export interface IntegrityCheckResult {
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const backupData = <span class="cstat-no" title="statement not covered" >await AsyncStorage.getItem(this.BACKUP_KEY);</span>
       
-<span class="cstat-no" title="statement not covered" >      if (!backupData) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!backupData) {</span>
 <span class="cstat-no" title="statement not covered" >        console.log('No backup data available');</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
       }
@@ -1284,7 +1284,7 @@ export interface IntegrityCheckResult {
 &nbsp;
       // Validate backup data
       const backupIntegrity = <span class="cstat-no" title="statement not covered" >await this.validateBackupIntegrity(backup);</span>
-<span class="cstat-no" title="statement not covered" >      if (!backupIntegrity.isValid) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!backupIntegrity.isValid) {</span>
 <span class="cstat-no" title="statement not covered" >        console.error('Backup data is corrupted:', backupIntegrity.errors);</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
       }
@@ -1323,7 +1323,7 @@ export interface IntegrityCheckResult {
         notifyParent
       );
       
-<span class="cstat-no" title="statement not covered" >      if (result.backupRestored) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (result.backupRestored) {</span>
 <span class="cstat-no" title="statement not covered" >        backupRestored = true;</span>
 <span class="cstat-no" title="statement not covered" >        recovered = true;</span>
 <span class="cstat-no" title="statement not covered" >        break; </span>// If backup restored, no need to handle other errors
@@ -1331,13 +1331,13 @@ export interface IntegrityCheckResult {
     }
 &nbsp;
     // If backup wasn't restored, try to fix medium and low severity errors
-<span class="cstat-no" title="statement not covered" >    if (!backupRestored) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!backupRestored) {</span>
 <span class="cstat-no" title="statement not covered" >      for (const error of [...mediumErrors, ...lowErrors]) {</span>
-<span class="cstat-no" title="statement not covered" >        if (error.recoverable) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (error.recoverable) {</span>
 <span class="cstat-no" title="statement not covered" >          try {</span>
             // Attempt automatic recovery based on error type
             const fixResult = <span class="cstat-no" title="statement not covered" >await this.attemptAutomaticFix(error);</span>
-<span class="cstat-no" title="statement not covered" >            if (fixResult) {</span>
+<span class="cstat-no" title="statement not covered" >            <span class="missing-if-branch" title="if path not taken" >I</span>if (fixResult) {</span>
 <span class="cstat-no" title="statement not covered" >              recovered = true;</span>
 <span class="cstat-no" title="statement not covered" >              console.log(`Automatically fixed error: ${error.type}`);</span>
             }
@@ -1357,11 +1357,11 @@ export interface IntegrityCheckResult {
 <span class="fstat-no" title="function not covered" >  static </span>async cleanupOldBackups(): Promise&lt;void&gt; {
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const historyData = <span class="cstat-no" title="statement not covered" >await AsyncStorage.getItem(this.BACKUP_HISTORY_KEY);</span>
-<span class="cstat-no" title="statement not covered" >      if (!historyData) <span class="cstat-no" title="statement not covered" >return;</span></span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!historyData) <span class="cstat-no" title="statement not covered" >return;</span></span>
 &nbsp;
       const history: string[] = <span class="cstat-no" title="statement not covered" >JSON.parse(historyData);</span>
       
-<span class="cstat-no" title="statement not covered" >      if (history.length &gt; this.MAX_BACKUPS) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (history.length &gt; this.MAX_BACKUPS) {</span>
         const toKeep = <span class="cstat-no" title="statement not covered" >history.slice(-this.MAX_BACKUPS);</span>
 <span class="cstat-no" title="statement not covered" >        await AsyncStorage.setItem(this.BACKUP_HISTORY_KEY, JSON.stringify(toKeep));</span>
         
@@ -1388,12 +1388,12 @@ export interface IntegrityCheckResult {
       let lastBackupTime: string | undefined;
       let backupCount = <span class="cstat-no" title="statement not covered" >0;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (backupData) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (backupData) {</span>
         const backup: DataBackup = <span class="cstat-no" title="statement not covered" >JSON.parse(backupData);</span>
 <span class="cstat-no" title="statement not covered" >        lastBackupTime = backup.timestamp;</span>
       }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (historyData) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (historyData) {</span>
         const history: string[] = <span class="cstat-no" title="statement not covered" >JSON.parse(historyData);</span>
 <span class="cstat-no" title="statement not covered" >        backupCount = history.length;</span>
       }
@@ -1427,7 +1427,7 @@ export interface IntegrityCheckResult {
       const expectedBalance = <span class="cstat-no" title="statement not covered" >totalEarned - totalSpent;</span>
 &nbsp;
       // Check balance consistency
-<span class="cstat-no" title="statement not covered" >      if (Math.abs(profile.balance - expectedBalance) &gt; 0.01) { // Allow for small floating point errors</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (Math.abs(profile.balance - expectedBalance) &gt; 0.01) { // Allow for small floating point errors</span>
 <span class="cstat-no" title="statement not covered" >        errors.push(DataCorruptionHandler.createDataCorruptionError(</span>
           'PROFILE_CORRUPTION',
           `Profile balance (${profile.balance}) doesn't match calculated balance (${expectedBalance})`,
@@ -1438,7 +1438,7 @@ export interface IntegrityCheckResult {
       }
 &nbsp;
       // Check total_earned consistency
-<span class="cstat-no" title="statement not covered" >      if (Math.abs(profile.total_earned - totalEarned) &gt; 0.01) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (Math.abs(profile.total_earned - totalEarned) &gt; 0.01) {</span>
 <span class="cstat-no" title="statement not covered" >        errors.push(DataCorruptionHandler.createDataCorruptionError(</span>
           'PROFILE_CORRUPTION',
           `Profile total_earned (${profile.total_earned}) doesn't match calculated total (${totalEarned})`,
@@ -1449,7 +1449,7 @@ export interface IntegrityCheckResult {
       }
 &nbsp;
       // Check total_spent consistency
-<span class="cstat-no" title="statement not covered" >      if (Math.abs(profile.total_spent - totalSpent) &gt; 0.01) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (Math.abs(profile.total_spent - totalSpent) &gt; 0.01) {</span>
 <span class="cstat-no" title="statement not covered" >        errors.push(DataCorruptionHandler.createDataCorruptionError(</span>
           'PROFILE_CORRUPTION',
           `Profile total_spent (${profile.total_spent}) doesn't match calculated total (${totalSpent})`,
@@ -1488,7 +1488,7 @@ export interface IntegrityCheckResult {
       }
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (duplicates.size &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (duplicates.size &gt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >      warnings.push(`Found ${duplicates.size} potential duplicate transactions`);</span>
     }
 &nbsp;
@@ -1498,7 +1498,7 @@ export interface IntegrityCheckResult {
   private <span class="fstat-no" title="function not covered" >static </span>async hasValidBackup(): Promise&lt;boolean&gt; {
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const backupData = <span class="cstat-no" title="statement not covered" >await AsyncStorage.getItem(this.BACKUP_KEY);</span>
-<span class="cstat-no" title="statement not covered" >      if (!backupData) <span class="cstat-no" title="statement not covered" >return false;</span></span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!backupData) <span class="cstat-no" title="statement not covered" >return false;</span></span>
 &nbsp;
       const backup: DataBackup = <span class="cstat-no" title="statement not covered" >JSON.parse(backupData);</span>
       const integrity = <span class="cstat-no" title="statement not covered" >await this.validateBackupIntegrity(backup);</span>
@@ -1515,7 +1515,7 @@ export interface IntegrityCheckResult {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    try {</span>
       // Check backup structure
-<span class="cstat-no" title="statement not covered" >      if (!backup.timestamp || !backup.version || !backup.metadata) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!backup.timestamp || !backup.version || !backup.metadata) {</span>
 <span class="cstat-no" title="statement not covered" >        errors.push(DataCorruptionHandler.createDataCorruptionError(</span>
           'STORAGE_CORRUPTION',
           'Backup structure is invalid',
@@ -1528,14 +1528,14 @@ export interface IntegrityCheckResult {
       const backupAge = <span class="cstat-no" title="statement not covered" >Date.now() - new Date(backup.timestamp).getTime();</span>
       const sevenDays = <span class="cstat-no" title="statement not covered" >7 * 24 * 60 * 60 * 1000;</span>
       
-<span class="cstat-no" title="statement not covered" >      if (backupAge &gt; sevenDays) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (backupAge &gt; sevenDays) {</span>
 <span class="cstat-no" title="statement not covered" >        warnings.push(`Backup is ${Math.floor(backupAge / (24 * 60 * 60 * 1000))} days old`);</span>
       }
 &nbsp;
       // Validate profile data if present
-<span class="cstat-no" title="statement not covered" >      if (backup.profile) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (backup.profile) {</span>
         const profileError = <span class="cstat-no" title="statement not covered" >DataCorruptionHandler.validateProfileData(backup.profile);</span>
-<span class="cstat-no" title="statement not covered" >        if (profileError) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (profileError) {</span>
 <span class="cstat-no" title="statement not covered" >          errors.push(profileError);</span>
         }
       }
@@ -1543,7 +1543,7 @@ export interface IntegrityCheckResult {
       // Validate transaction data
 <span class="cstat-no" title="statement not covered" >      for (const transaction of backup.transactions) {</span>
         const transactionError = <span class="cstat-no" title="statement not covered" >DataCorruptionHandler.validateTransactionData(transaction);</span>
-<span class="cstat-no" title="statement not covered" >        if (transactionError) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (transactionError) {</span>
 <span class="cstat-no" title="statement not covered" >          errors.push(transactionError);</span>
         }
       }
@@ -1651,7 +1651,7 @@ export const <span class="cstat-no" title="statement not covered" >useDataIntegr
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-27T08:54:50.024Z
+                at 2025-12-27T09:49:00.373Z
             </div>
         <script src="../prettify.js"></script>
         <script>

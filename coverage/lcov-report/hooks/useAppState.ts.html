@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/44</span>
+                <span class='fraction'>0/28</span>
             </div>
         
             
@@ -822,16 +822,16 @@ export const <span class="cstat-no" title="statement not covered" >useAppState =
   const initializeSession = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const storedSession = <span class="cstat-no" title="statement not covered" >await AsyncStorage.getItem(STORAGE_KEY);</span>
-<span class="cstat-no" title="statement not covered" >      if (storedSession) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (storedSession) {</span>
         const session: AppUsageSession = <span class="cstat-no" title="statement not covered" >JSON.parse(storedSession);</span>
         
         // If there was an active session, calculate elapsed time and deduct tokens
-<span class="cstat-no" title="statement not covered" >        if (session.isActive) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (session.isActive) {</span>
           const elapsedTime = <span class="cstat-no" title="statement not covered" >Date.now() - session.startTime;</span>
           const elapsedMinutes = <span class="cstat-no" title="statement not covered" >Math.floor(elapsedTime / (1000 * 60));</span>
           const tokensToDeduct = <span class="cstat-no" title="statement not covered" >elapsedMinutes * TOKENS_PER_MINUTE;</span>
           
-<span class="cstat-no" title="statement not covered" >          if (tokensToDeduct &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >          <span class="missing-if-branch" title="if path not taken" >I</span>if (tokensToDeduct &gt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >            try {</span>
 <span class="cstat-no" title="statement not covered" >              await spendTokens(</span>
                 tokensToDeduct,
@@ -863,12 +863,12 @@ export const <span class="cstat-no" title="statement not covered" >useAppState =
 <span class="cstat-no" title="statement not covered" >    console.log(`AppState changed from ${previousAppState} to ${nextAppState}`);</span>
     
     // When app becomes active (user returns to Attention Wallet)
-<span class="cstat-no" title="statement not covered" >    if (previousAppState !== 'active' &amp;&amp; nextAppState === 'active') {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (previousAppState !== 'active' &amp;&amp; nextAppState === 'active') {</span>
 <span class="cstat-no" title="statement not covered" >      await handleAppBecameActive();</span>
     }
     
     // When app goes to background (user leaves Attention Wallet)
-<span class="cstat-no" title="statement not covered" >    if (previousAppState === 'active' &amp;&amp; nextAppState !== 'active') {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (previousAppState === 'active' &amp;&amp; nextAppState !== 'active') {</span>
 <span class="cstat-no" title="statement not covered" >      await handleAppWentToBackground();</span>
     }
     
@@ -881,7 +881,7 @@ export const <span class="cstat-no" title="statement not covered" >useAppState =
   const handleAppBecameActive = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>() =&gt; {</span>
     const session = <span class="cstat-no" title="statement not covered" >sessionRef.current;</span>
     
-<span class="cstat-no" title="statement not covered" >    if (session &amp;&amp; session.isActive) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (session &amp;&amp; session.isActive) {</span>
       // Calculate elapsed time
       const elapsedTime = <span class="cstat-no" title="statement not covered" >Date.now() - session.startTime;</span>
       const elapsedMinutes = <span class="cstat-no" title="statement not covered" >Math.floor(elapsedTime / (1000 * 60));</span>
@@ -890,7 +890,7 @@ export const <span class="cstat-no" title="statement not covered" >useAppState =
 <span class="cstat-no" title="statement not covered" >      console.log(`User returned after ${elapsedMinutes} minutes. Deducting ${tokensToDeduct} tokens.`);</span>
       
       // Deduct tokens if any time has passed
-<span class="cstat-no" title="statement not covered" >      if (tokensToDeduct &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (tokensToDeduct &gt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >        try {</span>
 <span class="cstat-no" title="statement not covered" >          await spendTokens(</span>
             tokensToDeduct,
@@ -932,7 +932,7 @@ export const <span class="cstat-no" title="statement not covered" >useAppState =
   const handleAppWentToBackground = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>() =&gt; {</span>
     const session = <span class="cstat-no" title="statement not covered" >sessionRef.current;</span>
     
-<span class="cstat-no" title="statement not covered" >    if (session &amp;&amp; session.isActive) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (session &amp;&amp; session.isActive) {</span>
       // Store session to handle app termination
 <span class="cstat-no" title="statement not covered" >      try {</span>
 <span class="cstat-no" title="statement not covered" >        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(session));</span>
@@ -948,17 +948,17 @@ export const <span class="cstat-no" title="statement not covered" >useAppState =
    * Requirements: 2.1, 2.2
    */
   const startAppUsage = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>(appName: string): Promise&lt;void&gt; =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!appName.trim()) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!appName.trim()) {</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('App name is required to start usage tracking');</span>
     }
 &nbsp;
     // Check if user has sufficient balance (at least 5 tokens for 1 minute)
-<span class="cstat-no" title="statement not covered" >    if (balance &lt; TOKENS_PER_MINUTE) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (balance &lt; TOKENS_PER_MINUTE) {</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('Insufficient balance to start app usage');</span>
     }
 &nbsp;
     // Stop any existing session
-<span class="cstat-no" title="statement not covered" >    if (currentSession?.isActive) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (currentSession?.isActive) {</span>
 <span class="cstat-no" title="statement not covered" >      await stopAppUsage();</span>
     }
 &nbsp;
@@ -989,7 +989,7 @@ export const <span class="cstat-no" title="statement not covered" >useAppState =
    * Stop tracking app usage
    */
   const stopAppUsage = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>(): Promise&lt;void&gt; =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (currentSession) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (currentSession) {</span>
       const finalSession = <span class="cstat-no" title="statement not covered" >{</span>
         ...currentSession,
         isActive: false
@@ -1019,13 +1019,13 @@ export const <span class="cstat-no" title="statement not covered" >useAppState =
 <span class="cstat-no" title="statement not covered" >    deductionIntervalRef.current = setInterval(<span class="fstat-no" title="function not covered" >async </span>() =&gt; {</span>
       const session = <span class="cstat-no" title="statement not covered" >sessionRef.current;</span>
       
-<span class="cstat-no" title="statement not covered" >      if (!session || !session.isActive) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!session || !session.isActive) {</span>
 <span class="cstat-no" title="statement not covered" >        clearDeductionInterval();</span>
 <span class="cstat-no" title="statement not covered" >        return;</span>
       }
 &nbsp;
       // Check if user still has balance
-<span class="cstat-no" title="statement not covered" >      if (balance &lt; TOKENS_PER_MINUTE) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (balance &lt; TOKENS_PER_MINUTE) {</span>
 <span class="cstat-no" title="statement not covered" >        console.log('Insufficient balance, stopping app usage tracking');</span>
 <span class="cstat-no" title="statement not covered" >        await stopAppUsage();</span>
 <span class="cstat-no" title="statement not covered" >        return;</span>
@@ -1062,7 +1062,7 @@ export const <span class="cstat-no" title="statement not covered" >useAppState =
    * Clear the deduction interval
    */
   const clearDeductionInterval = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (deductionIntervalRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (deductionIntervalRef.current) {</span>
 <span class="cstat-no" title="statement not covered" >      clearInterval(deductionIntervalRef.current);</span>
 <span class="cstat-no" title="statement not covered" >      deductionIntervalRef.current = null;</span>
     }
@@ -1072,7 +1072,7 @@ export const <span class="cstat-no" title="statement not covered" >useAppState =
    * Get elapsed time for current session in milliseconds
    */
   const getElapsedTime = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(): number =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!currentSession || !currentSession.isActive) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!currentSession || !currentSession.isActive) {</span>
 <span class="cstat-no" title="statement not covered" >      return 0;</span>
     }
     
@@ -1096,7 +1096,7 @@ export const <span class="cstat-no" title="statement not covered" >useAppState =
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-27T08:54:49.941Z
+                at 2025-12-27T09:49:00.299Z
             </div>
         <script src="../prettify.js"></script>
         <script>

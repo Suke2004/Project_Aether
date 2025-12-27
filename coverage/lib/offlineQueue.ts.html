@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/28</span>
+                <span class='fraction'>0/21</span>
             </div>
         
             
@@ -1159,7 +1159,7 @@ export const <span class="cstat-no" title="statement not covered" >syncHelpers =
 <span class="cstat-no" title="statement not covered" >    try {</span>
       // Check network connectivity first
       const isOnline = <span class="cstat-no" title="statement not covered" >await networkHelpers.isOnline();</span>
-<span class="cstat-no" title="statement not covered" >      if (!isOnline) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!isOnline) {</span>
 <span class="cstat-no" title="statement not covered" >        console.log('Device is offline, skipping sync');</span>
 <span class="cstat-no" title="statement not covered" >        return results;</span>
       }
@@ -1180,7 +1180,7 @@ export const <span class="cstat-no" title="statement not covered" >syncHelpers =
       }
 &nbsp;
       // Cleanup synced transactions
-<span class="cstat-no" title="statement not covered" >      if (results.success &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (results.success &gt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >        await queueHelpers.cleanupSyncedTransactions();</span>
       }
 &nbsp;
@@ -1233,7 +1233,7 @@ export const <span class="cstat-no" title="statement not covered" >syncHelpers =
 <span class="cstat-no" title="statement not covered" >    try {</span>
       // Get current profile from server (server-side precedence)
       const currentProfile = <span class="cstat-no" title="statement not covered" >await dbHelpers.getProfile(userId);</span>
-<span class="cstat-no" title="statement not covered" >      if (!currentProfile) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!currentProfile) {</span>
 <span class="cstat-no" title="statement not covered" >        throw new Error('Profile not found');</span>
       }
 &nbsp;
@@ -1245,7 +1245,7 @@ export const <span class="cstat-no" title="statement not covered" >syncHelpers =
 <span class="cstat-no" title="statement not covered" >      if (transaction.type === 'earn') {</span>
 <span class="cstat-no" title="statement not covered" >        newBalance += transaction.amount;</span>
 <span class="cstat-no" title="statement not covered" >        newTotalEarned += transaction.amount;</span>
-      } else <span class="cstat-no" title="statement not covered" >if (transaction.type === 'spend') {</span>
+      } else <span class="cstat-no" title="statement not covered" ><span class="missing-if-branch" title="if path not taken" >I</span>if (transaction.type === 'spend') {</span>
 <span class="cstat-no" title="statement not covered" >        newBalance -= transaction.amount;</span>
 <span class="cstat-no" title="statement not covered" >        newTotalSpent += transaction.amount;</span>
       }
@@ -1276,12 +1276,12 @@ export const <span class="cstat-no" title="statement not covered" >syncHelpers =
         const results = <span class="cstat-no" title="statement not covered" >await syncHelpers.syncTransactions(userId);</span>
         
         // If we had some success or no transactions to sync, consider it successful
-<span class="cstat-no" title="statement not covered" >        if (results.success &gt; 0 || (results.success === 0 &amp;&amp; results.failed === 0)) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (results.success &gt; 0 || (results.success === 0 &amp;&amp; results.failed === 0)) {</span>
 <span class="cstat-no" title="statement not covered" >          return results;</span>
         }
 &nbsp;
         // If all transactions failed, retry with backoff
-<span class="cstat-no" title="statement not covered" >        if (results.failed &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (results.failed &gt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >          throw new Error(`All ${results.failed} transactions failed to sync`);</span>
         }
 &nbsp;
@@ -1290,7 +1290,7 @@ export const <span class="cstat-no" title="statement not covered" >syncHelpers =
 <span class="cstat-no" title="statement not covered" >        lastError = error as Error;</span>
 <span class="cstat-no" title="statement not covered" >        attempt++;</span>
         
-<span class="cstat-no" title="statement not covered" >        if (attempt &lt; maxRetries) {</span>
+<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (attempt &lt; maxRetries) {</span>
           // Exponential backoff: 1s, 2s, 4s, etc.
           const backoffDelay = <span class="cstat-no" title="statement not covered" >Math.pow(2, attempt) * 1000;</span>
 <span class="cstat-no" title="statement not covered" >          console.log(`Sync attempt ${attempt} failed, retrying in ${backoffDelay}ms:`, error);</span>
@@ -1426,7 +1426,7 @@ export const <span class="cstat-no" title="statement not covered" >offlineQueueM
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-27T08:54:50.024Z
+                at 2025-12-27T09:49:00.373Z
             </div>
         <script src="../prettify.js"></script>
         <script>

@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/50</span>
+                <span class='fraction'>0/39</span>
             </div>
         
             
@@ -648,7 +648,7 @@ const genAI = <span class="cstat-no" title="statement not covered" >new GoogleGe
 export const <span class="cstat-no" title="statement not covered" >convertImageToBase64 = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >a</span>sync </span>(imageUri: string): Promise&lt;string&gt; =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  try {</span>
     // For React Native, we need to handle different image sources
-<span class="cstat-no" title="statement not covered" >    if (imageUri.startsWith('data:')) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (imageUri.startsWith('data:')) {</span>
       // Already base64 encoded
 <span class="cstat-no" title="statement not covered" >      return imageUri.split(',')[1];</span>
     }
@@ -689,7 +689,7 @@ export const <span class="cstat-no" title="statement not covered" >verifyQuest =
 ): Promise&lt;AIVerificationResult&gt; =&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
     // Validate inputs
-<span class="cstat-no" title="statement not covered" >    if (!imageUri || !questDescription || !verificationPrompt) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!imageUri || !questDescription || !verificationPrompt) {</span>
 <span class="cstat-no" title="statement not covered" >      throw AIServiceErrorHandler.createAIServiceError(</span>
         'CONFIG_ERROR',
         'Missing required parameters for quest verification',
@@ -697,7 +697,7 @@ export const <span class="cstat-no" title="statement not covered" >verifyQuest =
       );
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (!GEMINI_CONFIG.apiKey) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!GEMINI_CONFIG.apiKey) {</span>
 <span class="cstat-no" title="statement not covered" >      throw AIServiceErrorHandler.createAIServiceError(</span>
         'CONFIG_ERROR',
         'Gemini API key not configured',
@@ -765,7 +765,7 @@ Be encouraging but fair in your assessment. The confidence score should reflect 
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      result = await Promise.race([apiCallPromise, timeoutPromise]);</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      if (error instanceof Error &amp;&amp; error.message.includes('timeout')) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (error instanceof Error &amp;&amp; error.message.includes('timeout')) {</span>
 <span class="cstat-no" title="statement not covered" >        throw error; </span>// Re-throw timeout errors as-is
       }
       
@@ -785,14 +785,14 @@ Be encouraging but fair in your assessment. The confidence score should reflect 
     let parsedResult: AIVerificationResult;
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const jsonMatch = <span class="cstat-no" title="statement not covered" >text.match(/\{[\s\S]*\}/);</span>
-<span class="cstat-no" title="statement not covered" >      if (!jsonMatch) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!jsonMatch) {</span>
 <span class="cstat-no" title="statement not covered" >        throw new Error('No JSON found in AI response');</span>
       }
       
       const jsonResponse = <span class="cstat-no" title="statement not covered" >JSON.parse(jsonMatch[0]);</span>
       
       // Validate the response structure
-<span class="cstat-no" title="statement not covered" >      if (typeof jsonResponse.isValid !== 'boolean' || </span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof jsonResponse.isValid !== 'boolean' || </span>
           typeof jsonResponse.confidence !== 'number' ||
           jsonResponse.confidence &lt; 0 || 
           jsonResponse.confidence &gt; 100) {
@@ -820,7 +820,7 @@ Be encouraging but fair in your assessment. The confidence score should reflect 
 &nbsp;
   } catch (error) {
     // Handle AI service errors with fallback mechanisms
-<span class="cstat-no" title="statement not covered" >    if (error instanceof Error &amp;&amp; 'type' in error) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (error instanceof Error &amp;&amp; 'type' in error) {</span>
       const aiError = <span class="cstat-no" title="statement not covered" >error as AIServiceError;</span>
       
       const { shouldRetry, manualVerificationRequested } = <span class="cstat-no" title="statement not covered" >await AIServiceErrorHandler.handleAIServiceError(</span>
@@ -828,7 +828,7 @@ Be encouraging but fair in your assessment. The confidence score should reflect 
         requestManualVerification
       );
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (manualVerificationRequested) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (manualVerificationRequested) {</span>
         // Return a result indicating manual verification was requested
 <span class="cstat-no" title="statement not covered" >        return {</span>
           isValid: false,
@@ -837,7 +837,7 @@ Be encouraging but fair in your assessment. The confidence score should reflect 
         };
       }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (shouldRetry) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (shouldRetry) {</span>
         // This will be handled by the retry wrapper
 <span class="cstat-no" title="statement not covered" >        throw aiError;</span>
       }
@@ -856,7 +856,7 @@ Be encouraging but fair in your assessment. The confidence score should reflect 
       requestManualVerification
     );
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (manualVerificationRequested) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (manualVerificationRequested) {</span>
 <span class="cstat-no" title="statement not covered" >      return {</span>
         isValid: false,
         confidence: 0,
@@ -897,7 +897,7 @@ export const <span class="cstat-no" title="statement not covered" >verifyQuestWi
  */
 export const <span class="cstat-no" title="statement not covered" >checkGeminiHealth = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >a</span>sync </span>(): Promise&lt;boolean&gt; =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  try {</span>
-<span class="cstat-no" title="statement not covered" >    if (!GEMINI_CONFIG.apiKey) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!GEMINI_CONFIG.apiKey) {</span>
 <span class="cstat-no" title="statement not covered" >      return false;</span>
     }
     
@@ -916,7 +916,7 @@ export const <span class="cstat-no" title="statement not covered" >checkGeminiHe
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-27T08:54:50.024Z
+                at 2025-12-27T09:49:00.373Z
             </div>
         <script src="../prettify.js"></script>
         <script>

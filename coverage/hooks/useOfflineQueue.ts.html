@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/45</span>
+                <span class='fraction'>0/28</span>
             </div>
         
             
@@ -696,7 +696,7 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const queueStatus = <span class="cstat-no" title="statement not covered" >await offlineQueueManager.getStatus();</span>
       
-<span class="cstat-no" title="statement not covered" >      if (isMountedRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (isMountedRef.current) {</span>
 <span class="cstat-no" title="statement not covered" >        setStatus(<span class="fstat-no" title="function not covered" >prev </span>=&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
           ...prev,
           queueLength: queueStatus.queueLength,
@@ -718,7 +718,7 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
       const isOnline = <span class="cstat-no" title="statement not covered" >await networkHelpers.isOnline();</span>
 <span class="cstat-no" title="statement not covered" >      await networkHelpers.setNetworkStatus(isOnline);</span>
       
-<span class="cstat-no" title="statement not covered" >      if (isMountedRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (isMountedRef.current) {</span>
 <span class="cstat-no" title="statement not covered" >        setStatus(<span class="fstat-no" title="function not covered" >prev </span>=&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
           ...prev,
           isOnline,
@@ -726,7 +726,7 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
       }
 &nbsp;
       // If we just came back online and have unsynced transactions, trigger sync
-<span class="cstat-no" title="statement not covered" >      if (isOnline &amp;&amp; status.unsyncedCount &gt; 0 &amp;&amp; profile?.id) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (isOnline &amp;&amp; status.unsyncedCount &gt; 0 &amp;&amp; profile?.id) {</span>
 <span class="cstat-no" title="statement not covered" >        console.log('Network restored, triggering sync for unsynced transactions');</span>
 <span class="cstat-no" title="statement not covered" >        syncNow();</span>
       }
@@ -759,7 +759,7 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
 <span class="cstat-no" title="statement not covered" >      await refreshStatus();</span>
 &nbsp;
       // If online, attempt immediate sync
-<span class="cstat-no" title="statement not covered" >      if (status.isOnline &amp;&amp; profile?.id) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (status.isOnline &amp;&amp; profile?.id) {</span>
         // Don't await this to avoid blocking the UI
 <span class="cstat-no" title="statement not covered" >        syncNow().catch(<span class="fstat-no" title="function not covered" >error </span>=&gt; {</span>
 <span class="cstat-no" title="statement not covered" >          console.error('Background sync failed:', error);</span>
@@ -777,17 +777,17 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
    * Manually trigger synchronization
    */
   const syncNow = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >async </span>(): Promise&lt;{ success: number; failed: number }&gt; =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!profile?.id) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!profile?.id) {</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('User must be authenticated to sync transactions');</span>
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (status.isSyncing) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (status.isSyncing) {</span>
 <span class="cstat-no" title="statement not covered" >      console.log('Sync already in progress, skipping');</span>
 <span class="cstat-no" title="statement not covered" >      return { success: 0, failed: 0 };</span>
     }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      if (isMountedRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (isMountedRef.current) {</span>
 <span class="cstat-no" title="statement not covered" >        setStatus(<span class="fstat-no" title="function not covered" >prev </span>=&gt; (<span class="cstat-no" title="statement not covered" >{ ...prev, isSyncing: true })</span>);</span>
       }
 &nbsp;
@@ -802,7 +802,7 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
 <span class="cstat-no" title="statement not covered" >      console.error('Manual sync failed:', error);</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     } finally {
-<span class="cstat-no" title="statement not covered" >      if (isMountedRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (isMountedRef.current) {</span>
 <span class="cstat-no" title="statement not covered" >        setStatus(<span class="fstat-no" title="function not covered" >prev </span>=&gt; (<span class="cstat-no" title="statement not covered" >{ ...prev, isSyncing: false })</span>);</span>
       }
     }
@@ -812,7 +812,7 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
    * Handle app state changes for background sync
    */
   const handleAppStateChange = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >(n</span>extAppState: AppStateStatus) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (nextAppState === 'active' &amp;&amp; profile?.id) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (nextAppState === 'active' &amp;&amp; profile?.id) {</span>
       // App became active, check network and sync if needed
 <span class="cstat-no" title="statement not covered" >      console.log('App became active, checking for sync opportunities');</span>
 <span class="cstat-no" title="statement not covered" >      checkNetworkStatus();</span>
@@ -827,10 +827,10 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
    */
   const setupPeriodicSync = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
     // Clear existing intervals
-<span class="cstat-no" title="statement not covered" >    if (syncIntervalRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (syncIntervalRef.current) {</span>
 <span class="cstat-no" title="statement not covered" >      clearInterval(syncIntervalRef.current);</span>
     }
-<span class="cstat-no" title="statement not covered" >    if (networkCheckIntervalRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (networkCheckIntervalRef.current) {</span>
 <span class="cstat-no" title="statement not covered" >      clearInterval(networkCheckIntervalRef.current);</span>
     }
 &nbsp;
@@ -841,7 +841,7 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
 &nbsp;
     // Set up periodic sync attempts (every 60 seconds)
 <span class="cstat-no" title="statement not covered" >    syncIntervalRef.current = setInterval(<span class="fstat-no" title="function not covered" >async </span>() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      if (profile?.id &amp;&amp; status.unsyncedCount &gt; 0 &amp;&amp; status.isOnline &amp;&amp; !status.isSyncing) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (profile?.id &amp;&amp; status.unsyncedCount &gt; 0 &amp;&amp; status.isOnline &amp;&amp; !status.isSyncing) {</span>
 <span class="cstat-no" title="statement not covered" >        try {</span>
 <span class="cstat-no" title="statement not covered" >          await syncNow();</span>
         } catch (error) {
@@ -874,7 +874,7 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
    * Set up app state listener and periodic sync
    */
 <span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!isInitialized) <span class="cstat-no" title="statement not covered" >return;</span></span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!isInitialized) <span class="cstat-no" title="statement not covered" >return;</span></span>
 &nbsp;
     // Add app state change listener
     const subscription = <span class="cstat-no" title="statement not covered" >AppState.addEventListener('change', handleAppStateChange);</span>
@@ -886,10 +886,10 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
 <span class="cstat-no" title="statement not covered" >      subscription?.remove();</span>
       
       // Clear intervals
-<span class="cstat-no" title="statement not covered" >      if (syncIntervalRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (syncIntervalRef.current) {</span>
 <span class="cstat-no" title="statement not covered" >        clearInterval(syncIntervalRef.current);</span>
       }
-<span class="cstat-no" title="statement not covered" >      if (networkCheckIntervalRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (networkCheckIntervalRef.current) {</span>
 <span class="cstat-no" title="statement not covered" >        clearInterval(networkCheckIntervalRef.current);</span>
       }
     };
@@ -903,10 +903,10 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
 <span class="cstat-no" title="statement not covered" >      isMountedRef.current = false;</span>
       
       // Clear intervals
-<span class="cstat-no" title="statement not covered" >      if (syncIntervalRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (syncIntervalRef.current) {</span>
 <span class="cstat-no" title="statement not covered" >        clearInterval(syncIntervalRef.current);</span>
       }
-<span class="cstat-no" title="statement not covered" >      if (networkCheckIntervalRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (networkCheckIntervalRef.current) {</span>
 <span class="cstat-no" title="statement not covered" >        clearInterval(networkCheckIntervalRef.current);</span>
       }
     };
@@ -928,7 +928,7 @@ const useOfflineQueue = <span class="cstat-no" title="statement not covered" ><s
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-27T08:54:50.024Z
+                at 2025-12-27T09:49:00.373Z
             </div>
         <script src="../prettify.js"></script>
         <script>

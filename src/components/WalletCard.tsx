@@ -13,6 +13,7 @@ import {
   Dimensions,
   ViewStyle,
   TextStyle,
+  Platform,
 } from 'react-native';
 import { useWallet } from '../context/WalletContext';
 
@@ -218,15 +219,24 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     position: 'relative',
     overflow: 'hidden',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+    // Use boxShadow for web compatibility
+    ...(Platform.OS === 'web' ? {
+      boxShadow: `0 0 5px ${colors.primary}30`,
+    } : {
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.3,
+      shadowRadius: 5,
+      elevation: 8,
+    }),
   } as ViewStyle,
 
   lowBalanceContainer: {
-    shadowColor: colors.lowBalance,
+    ...(Platform.OS === 'web' ? {
+      boxShadow: `0 0 5px ${colors.lowBalance}30`,
+    } : {
+      shadowColor: colors.lowBalance,
+    }),
     borderColor: colors.lowBalance,
     borderWidth: 1,
   } as ViewStyle,
@@ -262,15 +272,24 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: 'bold',
     color: colors.primary,
-    textShadowColor: colors.primary,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+    // Use textShadow for web compatibility
+    ...(Platform.OS === 'web' ? {
+      textShadow: `0 0 10px ${colors.primary}`,
+    } : {
+      textShadowColor: colors.primary,
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 10,
+    }),
     marginBottom: 4,
   } as TextStyle,
 
   lowBalanceText: {
     color: colors.lowBalance,
-    textShadowColor: colors.lowBalance,
+    ...(Platform.OS === 'web' ? {
+      textShadow: `0 0 10px ${colors.lowBalance}`,
+    } : {
+      textShadowColor: colors.lowBalance,
+    }),
   } as TextStyle,
 
   minutesText: {
