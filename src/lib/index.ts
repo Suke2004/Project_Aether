@@ -15,6 +15,9 @@ export * from './utils';
 // Export Supabase client and helpers
 export * from './supabase';
 
+// Export Gemini AI service
+export * from './gemini';
+
 // Re-export commonly used types for convenience
 export type {
   Profile,
