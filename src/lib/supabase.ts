@@ -315,6 +315,32 @@ export const dbHelpers = {
       throw error;
     }
   },
+
+  /**
+   * Get all child profiles (for parent dashboard)
+   * In a production app, this would filter by parent-child relationships
+   */
+  getChildProfiles: async (): Promise<Profile[]> => {
+    const client = getSupabaseClient();
+    
+    try {
+      const { data, error } = await client
+        .from('profiles')
+        .select('*')
+        .eq('role', 'child')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Get child profiles error:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Get child profiles failed:', error);
+      throw error;
+    }
+  },
 };
 
 /**
