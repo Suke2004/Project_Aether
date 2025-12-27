@@ -40,10 +40,10 @@ interface QuestScreenProps {
   onQuestComplete?: (tokensEarned: number) => void;
 }
 
-export const QuestScreen: React.FC<QuestScreenProps> = ({
+export const QuestScreen = ({
   onBack,
   onQuestComplete,
-}) => {
+}: QuestScreenProps) => {
   const { hasRole } = useAuth();
   const { balance, earnTokens } = useWallet();
   

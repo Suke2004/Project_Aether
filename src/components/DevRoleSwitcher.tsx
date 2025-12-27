@@ -1,8 +1,3 @@
-/**
- * Development Role Switcher Component
- * Allows switching between parent and child roles in development mode
- */
-
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { useAuth } from '../context/AuthContext';
@@ -19,7 +14,7 @@ const colors = {
   textSecondary: '#b0b0b0',
 };
 
-export const DevRoleSwitcher: React.FC = () => {
+export const DevRoleSwitcher = () => {
   const { profile, switchRole } = useAuth();
   
   // Only show in development mode

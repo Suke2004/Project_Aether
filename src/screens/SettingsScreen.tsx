@@ -33,7 +33,7 @@ const colors = {
   textSecondary: '#b0b0b0', // Gray text
 };
 
-export const SettingsScreen: React.FC = () => {
+export const SettingsScreen = () => {
   const { user, profile, signOut } = useAuth();
   const { balance } = useWallet();
   
@@ -82,7 +82,15 @@ export const SettingsScreen: React.FC = () => {
     );
   };
 
-  const SettingItem: React.FC<{
+  const SettingItem = ({
+    title,
+    subtitle,
+    value,
+    onValueChange,
+    onPress,
+    showArrow,
+    destructive,
+  }: {
     title: string;
     subtitle?: string;
     value?: boolean;
@@ -90,7 +98,7 @@ export const SettingsScreen: React.FC = () => {
     onPress?: () => void;
     showArrow?: boolean;
     destructive?: boolean;
-  }> = ({ title, subtitle, value, onValueChange, onPress, showArrow, destructive }) => (
+  }) => (
     <TouchableOpacity
       style={[styles.settingItem, destructive && styles.destructiveItem]}
       onPress={onPress}

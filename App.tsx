@@ -92,7 +92,7 @@ class ErrorBoundary extends React.Component<
 }
 
 // Loading Component
-const LoadingScreen: React.FC = () => (
+const LoadingScreen = () => (
   <View style={styles.loadingContainer}>
     <ActivityIndicator size="large" color="#00ff88" />
     <Text style={styles.loadingText}>Loading Attention Wallet...</Text>
@@ -100,7 +100,7 @@ const LoadingScreen: React.FC = () => (
 );
 
 // Main Navigation Component
-const AppNavigator: React.FC = () => {
+const AppNavigator = () => {
   const { user, profile, isLoading } = useAuth();
 
   if (isLoading) {

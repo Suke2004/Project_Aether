@@ -1,10 +1,3 @@
-/**
- * Quest Management Component
- * Allows parents to create, edit, and delete quest types
- * Implements custom verification prompts for AI analysis and reward scaling
- * Requirements: 7.1, 7.3, 7.4
- */
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -46,7 +39,7 @@ interface QuestManagementProps {
  * Quest Management Component
  * Provides comprehensive quest type management for parents
  */
-const QuestManagement: React.FC<QuestManagementProps> = ({ visible, onClose }) => {
+const QuestManagement = ({ visible, onClose }: QuestManagementProps) => {
   const { user, hasRole } = useAuth();
   
   // State for quest types and form management

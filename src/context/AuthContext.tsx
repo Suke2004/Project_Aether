@@ -1,8 +1,3 @@
-/**
- * Authentication Context for the Attention Wallet system
- * Handles user authentication, session management, and role-based access control
- */
-
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { getSupabaseClient, authHelpers, dbHelpers } from '../lib/supabase';
@@ -20,7 +15,7 @@ interface AuthProviderProps {
  * Authentication Provider Component
  * Manages authentication state and provides auth functions to child components
  */
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);

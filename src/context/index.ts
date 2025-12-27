@@ -1,8 +1,3 @@
-/**
- * Context providers index file
- * Export all context providers from this directory
- */
-
 // Authentication Context
 export { AuthProvider, useAuth, withRoleAccess } from './AuthContext';
 

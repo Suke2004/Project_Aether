@@ -1,9 +1,3 @@
-/**
- * WalletCard Component
- * Simple balance display without animations
- * Requirements: 5.1, 5.4
- */
-
 import React from 'react';
 import {
   View,
@@ -37,11 +31,11 @@ interface WalletCardProps {
   lowBalanceThreshold?: number;
 }
 
-export const WalletCard: React.FC<WalletCardProps> = ({
+export const WalletCard = ({
   style,
   showDetails = true,
   lowBalanceThreshold = 25,
-}) => {
+}: WalletCardProps) => {
   const { balance, totalEarned, totalSpent, isLoading, offlineStatus } = useWallet();
 
   // Determine if balance is low

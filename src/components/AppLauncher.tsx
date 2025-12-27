@@ -1,10 +1,4 @@
-/**
- * AppLauncher Component
- * Grid layout for entertainment apps with deep linking and access control
- * Requirements: 2.1, 6.2
- */
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -24,6 +18,7 @@ import { useWallet } from '../context/WalletContext';
 import { AppConfig } from '../lib/types';
 import { AppLaunchErrorHandler, AppLaunchError } from '../lib/errorHandling';
 import { windowManager } from '../lib/windowManager';
+import { StableTimer } from './StableTimer';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -126,145 +121,61 @@ interface TimerState {
   lastChargeTime: number; // Track when we last charged tokens
 }
 
-export const AppLauncher: React.FC<AppLauncherProps> = ({
+export const AppLauncher = ({
   apps = DEFAULT_APPS,
   minTokensRequired = 1, // Minimum 1 token to start (proportional charging)
   tokensPerMinute = 5,
   style,
   onAppLaunch,
   onInsufficientBalance,
-}) => {
+}: AppLauncherProps) => {
   const { balance, spendTokens, refundTokens, isLoading } = useWallet();
   
-  // Component state
+  // Component state - restored with proper timer state
   const [launchingApp, setLaunchingApp] = useState<string | null>(null);
   const [appAvailability, setAppAvailability] = useState<Record<string, boolean>>({});
   const [activeTimer, setActiveTimer] = useState<TimerState | null>(null);
-  const [currentTime, setCurrentTime] = useState<number>(Date.now());
   
   // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
-
-  // Animate component entrance
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
-      }),
-    ]).start();
-  }, []);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   // Check app availability on mount
   useEffect(() => {
     checkAppAvailability();
     
-    // Set up window manager callback for when windows are closed
-    windowManager.setOnWindowClosed((appName: string) => {
-      console.log(`Window closed for ${appName}, stopping timer`);
-      if (activeTimer && activeTimer.appName === appName) {
-        stopTimer();
-      }
-    });
-    
     // Cleanup on unmount
     return () => {
-      windowManager.cleanup();
+      // No window manager cleanup needed for new tabs
     };
-  }, [apps, activeTimer]);
+  }, []);
 
-  // Timer effect - update current time and handle proportional token deduction
-  useEffect(() => {
-    if (!activeTimer) return;
-
-    const interval = setInterval(() => {
-      const now = Date.now();
-      setCurrentTime(now);
-      
-      // Calculate elapsed time in seconds since last charge
-      const elapsedSinceLastCharge = now - activeTimer.lastChargeTime;
-      const secondsElapsed = Math.floor(elapsedSinceLastCharge / 1000);
-      
-      // Only charge if at least 1 second has passed
-      if (secondsElapsed > 0) {
-        // Calculate proportional tokens: 5 tokens per minute = 5/60 tokens per second
-        const tokensPerSecond = tokensPerMinute / 60;
-        const tokensToCharge = Math.floor(secondsElapsed * tokensPerSecond * 100) / 100; // Round to 2 decimal places
-        const tokensToChargeInteger = Math.ceil(tokensToCharge); // Round up to nearest integer
-        
-        if (tokensToChargeInteger > 0) {
-          // Check if user has enough balance
-          if (balance >= tokensToChargeInteger) {
-            spendTokens(tokensToChargeInteger, `${activeTimer.appName} usage (${secondsElapsed}s)`);
-            setActiveTimer(prev => prev ? {
-              ...prev,
-              tokensSpent: prev.tokensSpent + tokensToChargeInteger,
-              lastChargeTime: now
-            } : null);
-            
-            console.log(`Charged ${tokensToChargeInteger} tokens for ${secondsElapsed} seconds of ${activeTimer.appName} usage`);
-          } else {
-            // Insufficient balance - close window and stop timer
-            console.log(`Insufficient balance for ${activeTimer.appName}, closing window`);
-            
-            if (activeTimer.windowOpened) {
-              windowManager.closeWindow(activeTimer.appName);
-            }
-            
-            Alert.alert(
-              'Time\'s Up!',
-              `Your balance is too low to continue using ${activeTimer.appName}. The app has been closed automatically.`,
-              [{ text: 'OK' }]
-            );
-            stopTimer();
-          }
-        }
-      }
-      
-      // Check if window is still open (user might have closed it)
-      if (activeTimer.windowOpened && !windowManager.isWindowOpen(activeTimer.appName)) {
-        console.log(`Window for ${activeTimer.appName} was closed by user`);
-        stopTimer();
-      }
-    }, 1000); // Update every second
-
-    return () => clearInterval(interval);
-  }, [activeTimer, balance, spendTokens, tokensPerMinute]);
-
+  // Simple timer functions
   const startTimer = (appName: string, windowOpened: boolean = false) => {
-    const now = Date.now();
+    console.log('� SEtarting simple timer for', appName);
     setActiveTimer({
       appName,
-      startTime: now,
+      startTime: Date.now(),
       tokensSpent: 0,
       windowOpened,
-      lastChargeTime: now // Initialize last charge time to start time
+      lastChargeTime: Date.now(),
     });
-    setCurrentTime(now);
-    
-    // No upfront token charge - tokens will be charged proportionally as time passes
-    console.log(`Timer started for ${appName} (window opened: ${windowOpened}) - proportional charging enabled`);
   };
 
   const stopTimer = () => {
-    if (activeTimer) {
-      console.log(`Timer stopped for ${activeTimer.appName}. Total spent: ${activeTimer.tokensSpent} tokens`);
-      
-      // Close window if it was opened by us
-      if (activeTimer.windowOpened) {
-        windowManager.closeWindow(activeTimer.appName);
-      }
-      
-      setActiveTimer(null);
-    }
+    console.log('🟦 Stopping timer');
+    setActiveTimer(null);
+  };
+
+  const handleTokenCharge = (amount: number, description: string) => {
+    console.log('🟦 Charging tokens:', amount, description);
+    spendTokens(amount, description);
+    
+    // Update timer state
+    setActiveTimer(prev => prev ? {
+      ...prev,
+      tokensSpent: prev.tokensSpent + amount,
+      lastChargeTime: Date.now(),
+    } : null);
   };
 
   const checkAppAvailability = async () => {
@@ -332,9 +243,8 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
       const launched = await attemptAppLaunch(app);
       
       if (launched) {
-        // Start the timer with window management info
-        const windowOpened = Platform.OS === 'web' && !!app.webUrl;
-        startTimer(app.name, windowOpened);
+        // Start the timer - no window management needed for new tabs
+        startTimer(app.name, false); // windowOpened = false since we're using new tabs
         onAppLaunch?.(app);
       } else {
         Alert.alert(
@@ -360,30 +270,14 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
     try {
       console.log(`Attempting to launch ${app.name} on ${Platform.OS}`);
       
-      // On web platform, use window manager for better control
+      // On web platform, open in new tab
       if (Platform.OS === 'web' && app.webUrl) {
-        console.log(`Opening managed window for ${app.name}: ${app.webUrl}`);
+        console.log(`🟦 Opening ${app.name} in new tab: ${app.webUrl}`);
         
-        const windowOpened = await windowManager.openWindow(
-          app.name, 
-          app.webUrl,
-          (closedAppName) => {
-            // This callback is triggered when user closes the window
-            console.log(`User closed window for ${closedAppName}`);
-            if (activeTimer && activeTimer.appName === closedAppName) {
-              stopTimer();
-            }
-          }
-        );
-        
-        if (windowOpened) {
-          return true;
-        } else {
-          // Fallback to regular link opening if window manager fails
-          console.log(`Window manager failed, falling back to regular link opening`);
-          await Linking.openURL(app.webUrl);
-          return true;
-        }
+        // Open URL in new tab
+        window.open(app.webUrl, '_blank', 'noopener,noreferrer');
+        console.log(`🟦 Successfully opened ${app.name} in new tab`);
+        return true;
       }
 
       // On mobile, try deep link first
@@ -411,12 +305,19 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
         }
       }
 
-      // Fallback to web URL
+      // Fallback to web URL (also opens in new tab on web)
       if (app.webUrl) {
-        console.log(`Trying web fallback: ${app.webUrl}`);
+        console.log(`🟦 Trying web fallback: ${app.webUrl}`);
         try {
-          await Linking.openURL(app.webUrl);
-          console.log(`Successfully opened ${app.name} via web URL`);
+          if (Platform.OS === 'web') {
+            // Open in new tab on web
+            window.open(app.webUrl, '_blank', 'noopener,noreferrer');
+            console.log(`🟦 Successfully opened ${app.name} via web URL in new tab`);
+          } else {
+            // Use Linking on mobile
+            await Linking.openURL(app.webUrl);
+            console.log(`🟦 Successfully opened ${app.name} via web URL`);
+          }
           return true;
         } catch (webError) {
           console.log(`Web fallback failed for ${app.name}:`, webError);
@@ -439,7 +340,11 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
                     const webStoreUrl = Platform.OS === 'android'
                       ? `https://play.google.com/store/apps/details?id=${app.packageName}`
                       : `https://apps.apple.com/search?term=${encodeURIComponent(app.name)}`;
-                    Linking.openURL(webStoreUrl);
+                    if (Platform.OS === 'web') {
+                      window.open(webStoreUrl, '_blank', 'noopener,noreferrer');
+                    } else {
+                      Linking.openURL(webStoreUrl);
+                    }
                   });
                 }
               }
@@ -478,7 +383,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
           isDisabled && styles.appItemDisabled,
         ]}
         onPress={() => launchApp(app)}
-        disabled={isDisabled}
+        disabled={isDisabled || false}
         activeOpacity={0.7}
       >
         <View style={[styles.appIconContainer, isDisabled && styles.appIconDisabled]}>
@@ -528,42 +433,22 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
         style,
         {
           opacity: fadeAnim,
-          transform: [{ scale: scaleAnim }],
         },
       ]}
     >
-      {/* Active Timer Display */}
+      {/* Stable Timer Display */}
       {activeTimer && (
-        <View style={styles.timerDisplay}>
-          <View style={styles.timerHeader}>
-            <Text style={styles.timerAppName}>{activeTimer.appName}</Text>
-            <View style={styles.timerButtons}>
-              {activeTimer.windowOpened && (
-                <TouchableOpacity 
-                  style={styles.focusWindowButton} 
-                  onPress={() => windowManager.focusWindow(activeTimer.appName)}
-                >
-                  <Text style={styles.focusWindowText}>🔍 Focus</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity style={styles.stopTimerButton} onPress={stopTimer}>
-                <Text style={styles.stopTimerText}>⏹️ Stop</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View style={styles.timerStats}>
-            <Text style={styles.timerTime}>
-              {Math.floor((currentTime - activeTimer.startTime) / 60000)}:
-              {Math.floor(((currentTime - activeTimer.startTime) % 60000) / 1000).toString().padStart(2, '0')}
-            </Text>
-            <Text style={styles.timerSpent}>
-              Spent: {activeTimer.tokensSpent} tokens
-            </Text>
-            <Text style={styles.timerRemaining}>
-              Balance: {balance} tokens (~{Math.floor(balance / tokensPerMinute * 60)} seconds)
-            </Text>
-          </View>
-        </View>
+        <StableTimer
+          key={`timer-${activeTimer.appName}`}
+          appName={activeTimer.appName}
+          startTime={activeTimer.startTime}
+          tokensSpent={activeTimer.tokensSpent}
+          balance={balance}
+          tokensPerMinute={tokensPerMinute}
+          onStop={stopTimer}
+          windowOpened={false} // No window management for new tabs
+          onTokenCharge={handleTokenCharge}
+        />
       )}
 
       {/* Header */}
@@ -757,7 +642,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    elevation: 8,
+    elevation: 100, // Increased elevation to ensure it's always visible
+    zIndex: 100, // Added z-index for web compatibility
   } as ViewStyle,
 
   timerHeader: {

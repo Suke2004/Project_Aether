@@ -37,7 +37,7 @@ interface ChartData {
  * Provides comprehensive monitoring and analytics for child accounts
  * Includes real-time data synchronization and multiple concurrent session handling
  */
-const ParentDashboard: React.FC = () => {
+const ParentDashboard = () => {
   const { user, profile, hasRole } = useAuth();
   const { refreshBalance } = useWallet();
   

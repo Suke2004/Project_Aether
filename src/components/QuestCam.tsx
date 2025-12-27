@@ -1,9 +1,3 @@
-/**
- * QuestCam Component
- * Camera interface for quest completion with AI verification integration
- * Requirements: 1.1, 1.2
- */
-
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -51,12 +45,12 @@ interface QuestCamProps {
   style?: ViewStyle;
 }
 
-export const QuestCam: React.FC<QuestCamProps> = ({
+export const QuestCam = ({
   quest,
   onQuestComplete,
   onCancel,
   style,
-}) => {
+}: QuestCamProps) => {
   const { earnTokens } = useWallet();
   const { profile } = useAuth();
   const { requestVerification } = useManualVerification();

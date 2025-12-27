@@ -1,13 +1,3 @@
-/**
- * useAppState Hook for Time Tracking and Token Deduction
- * 
- * This hook monitors React Native AppState changes to track when the user
- * leaves the Attention Wallet app to use entertainment apps, and automatically
- * deducts tokens at a rate of 5 tokens per minute.
- * 
- * Requirements: 2.2, 2.5, 6.1
- */
-
 import { useEffect, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';

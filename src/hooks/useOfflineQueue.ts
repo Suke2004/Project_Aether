@@ -1,9 +1,3 @@
-/**
- * useOfflineQueue Hook for the Attention Wallet system
- * Provides React interface for offline queue management and synchronization
- * Requirements: 4.4, 8.1
- */
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { offlineQueueManager, networkHelpers } from '../lib/offlineQueue';

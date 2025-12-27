@@ -1,8 +1,3 @@
-/**
- * Wallet Context for the Attention Wallet system
- * Handles token operations, balance tracking, and transaction history management
- */
-
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { getSupabaseClient, dbHelpers, realtimeHelpers } from '../lib/supabase';
@@ -24,7 +19,7 @@ interface WalletProviderProps {
  * Wallet Provider Component
  * Manages wallet state and provides token operations to child components
  */
-export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
+export const WalletProvider = ({ children }: WalletProviderProps) => {
   const { user, profile, refreshProfile } = useAuth();
   const offlineQueue = useOfflineQueue();
   const { performIntegrityCheck, createBackup, handleCorruption } = useDataIntegrity();

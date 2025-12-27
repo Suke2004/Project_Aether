@@ -1,8 +1,3 @@
-/**
- * Animated Components
- * Reusable animated components for smooth transitions and cyberpunk effects
- */
-
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
@@ -23,12 +18,12 @@ interface FadeInViewProps {
   style?: ViewStyle;
 }
 
-export const FadeInView: React.FC<FadeInViewProps> = ({
+export const FadeInView = ({
   children,
   duration = 300,
   delay = 0,
   style,
-}) => {
+}: FadeInViewProps) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -60,14 +55,14 @@ interface SlideInViewProps {
   style?: ViewStyle;
 }
 
-export const SlideInView: React.FC<SlideInViewProps> = ({
+export const SlideInView = ({
   children,
   direction = 'up',
   duration = 300,
   delay = 0,
   distance = 50,
   style,
-}) => {
+}: SlideInViewProps) => {
   const slideAnim = useRef(new Animated.Value(distance)).current;
   const { dimensions } = useTheme();
 
@@ -136,13 +131,13 @@ interface PulseViewProps {
   style?: ViewStyle;
 }
 
-export const PulseView: React.FC<PulseViewProps> = ({
+export const PulseView = ({
   children,
   duration = 1000,
   minScale = 0.95,
   maxScale = 1.05,
   style,
-}) => {
+}: PulseViewProps) => {
   const pulseAnim = useRef(new Animated.Value(minScale)).current;
 
   useEffect(() => {
@@ -186,12 +181,12 @@ interface GlowTextProps {
   duration?: number;
 }
 
-export const GlowText: React.FC<GlowTextProps> = ({
+export const GlowText = ({
   children,
   style,
   glowColor,
   duration = 2000,
-}) => {
+}: GlowTextProps) => {
   const { colors, cyberpunkEffects } = useTheme();
   const glowAnim = useRef(new Animated.Value(0)).current;
 
@@ -243,7 +238,7 @@ interface AnimatedButtonProps extends TouchableOpacityProps {
   glowEffect?: boolean;
 }
 
-export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
+export const AnimatedButton = ({
   children,
   variant = 'primary',
   size = 'medium',
@@ -251,7 +246,7 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   style,
   onPress,
   ...props
-}) => {
+}: AnimatedButtonProps) => {
   const { colors, spacing, borderRadius, shadows, commonStyles } = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -372,11 +367,11 @@ interface LoadingSpinnerProps {
   style?: ViewStyle;
 }
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+export const LoadingSpinner = ({
   size = 40,
   color,
   style,
-}) => {
+}: LoadingSpinnerProps) => {
   const { colors } = useTheme();
   const spinAnim = useRef(new Animated.Value(0)).current;
 

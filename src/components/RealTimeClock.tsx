@@ -16,7 +16,7 @@ interface RealTimeClockProps {
   updateInterval?: number; // in milliseconds, default 1000
 }
 
-export const RealTimeClock: React.FC<RealTimeClockProps> = ({
+export const RealTimeClock = ({
   showDate = true,
   showSeconds = false,
   format24Hour = false,
@@ -24,7 +24,7 @@ export const RealTimeClock: React.FC<RealTimeClockProps> = ({
   dateStyle,
   containerStyle,
   updateInterval = 1000,
-}) => {
+}: RealTimeClockProps) => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {

@@ -64,11 +64,11 @@ interface LockScreenProps {
   minTokensRequired?: number;
 }
 
-export const LockScreen: React.FC<LockScreenProps> = ({
+export const LockScreen = ({
   onNavigateToQuests,
   onEmergencyExit,
   minTokensRequired = 5,
-}) => {
+}: LockScreenProps) => {
   const { hasRole, profile } = useAuth();
   const { balance, refreshBalance } = useWallet();
   

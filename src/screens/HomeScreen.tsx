@@ -52,10 +52,10 @@ interface HomeScreenProps {
   onInsufficientBalance?: () => void;
 }
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({
+export const HomeScreen = ({
   onAppLaunch,
   onInsufficientBalance,
-}) => {
+}: HomeScreenProps) => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { user, profile, hasRole } = useAuth();
   const { balance, isLoading } = useWallet();
