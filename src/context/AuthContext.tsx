@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const mockUser = {
         id: '00000000-0000-0000-0000-000000000123',
         email: 'dev@example.com',
-        user_metadata: { role: 'child' },
+        user_metadata: { role: 'parent' }, // Changed to 'parent' for dashboard access
         app_metadata: {},
         aud: 'authenticated',
         created_at: new Date().toISOString(),
@@ -109,7 +109,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       const mockProfile: Profile = {
         id: '00000000-0000-0000-0000-000000000123',
-        role: 'child',
+        role: 'parent', // Changed to 'parent' for dashboard access
         balance: 50,
         total_earned: 100,
         total_spent: 50,
@@ -330,6 +330,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  /**
+   * Switch role in development mode
+   */
+  const switchRole = (newRole: 'parent' | 'child'): void => {
+    const isDevelopment = process.env.NODE_ENV === 'development' || __DEV__;
+    
+    if (!isDevelopment) {
+      console.warn('Role switching is only available in development mode');
+      return;
+    }
+
+    console.log(`Switching role from ${profile?.role} to ${newRole}`);
+    
+    // Update the mock user and profile
+    const mockUser = {
+      id: '00000000-0000-0000-0000-000000000123',
+      email: 'dev@example.com',
+      user_metadata: { role: newRole },
+      app_metadata: {},
+      aud: 'authenticated',
+      created_at: new Date().toISOString(),
+    } as User;
+    
+    const mockProfile: Profile = {
+      id: '00000000-0000-0000-0000-000000000123',
+      role: newRole,
+      balance: 50,
+      total_earned: 100,
+      total_spent: 50,
+    };
+    
+    setUser(mockUser);
+    setProfile(mockProfile);
+  };
+
   // Context value with all auth functions and state
   const value: AuthContextType = {
     user,
@@ -342,6 +377,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     hasRole,
     isAuthenticated,
     refreshProfile,
+    switchRole,
   };
 
   return (

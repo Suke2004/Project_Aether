@@ -73,6 +73,7 @@ export interface AuthContextType {
   hasRole: (requiredRole: 'parent' | 'child') => boolean;
   isAuthenticated: () => boolean;
   refreshProfile: () => Promise<void>;
+  switchRole?: (newRole: 'parent' | 'child') => void; // Optional for development mode
 }
 
 // AI Service interfaces

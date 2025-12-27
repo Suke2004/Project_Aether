@@ -1,14 +1,5 @@
-/**
- * Authentication service for JWT-based authentication with Neon PostgreSQL
- * Replaces Supabase authentication
- */
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
-
-// This file appears to be incomplete or was being developed
-// For now, I'll create a basic structure that won't cause compilation errors
-
 export interface AuthUser {
   id: string;
   email: string;

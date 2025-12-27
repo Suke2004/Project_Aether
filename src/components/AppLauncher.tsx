@@ -45,7 +45,7 @@ const DEFAULT_APPS: AppConfig[] = [
   {
     name: 'YouTube',
     packageName: 'com.google.android.youtube',
-    deepLink: 'youtube://',
+    deepLink: 'vnd.youtube://',
     webUrl: 'https://youtube.com',
     icon: '📺',
     category: 'Video',
@@ -101,7 +101,7 @@ const DEFAULT_APPS: AppConfig[] = [
   {
     name: 'Roblox',
     packageName: 'com.roblox.client',
-    deepLink: 'roblox://',
+    deepLink: 'roblox-player://',
     webUrl: 'https://roblox.com',
     icon: '🎯',
     category: 'Gaming',
@@ -117,6 +117,12 @@ interface AppLauncherProps {
   onInsufficientBalance?: () => void;
 }
 
+interface TimerState {
+  appName: string;
+  startTime: number;
+  tokensSpent: number;
+}
+
 export const AppLauncher: React.FC<AppLauncherProps> = ({
   apps = DEFAULT_APPS,
   minTokensRequired = 5, // Minimum 1 minute of usage
@@ -130,6 +136,8 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
   // Component state
   const [launchingApp, setLaunchingApp] = useState<string | null>(null);
   const [appAvailability, setAppAvailability] = useState<Record<string, boolean>>({});
+  const [activeTimer, setActiveTimer] = useState<TimerState | null>(null);
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
   
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -157,112 +165,144 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
     checkAppAvailability();
   }, [apps]);
 
+  // Timer effect - update current time and handle token deduction
+  useEffect(() => {
+    if (!activeTimer) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setCurrentTime(now);
+      
+      const elapsedMinutes = Math.floor((now - activeTimer.startTime) / 60000);
+      const tokensToSpend = elapsedMinutes * tokensPerMinute;
+      const newTokensSpent = tokensToSpend - activeTimer.tokensSpent;
+      
+      if (newTokensSpent > 0) {
+        // Check if user has enough balance
+        if (balance >= newTokensSpent) {
+          spendTokens(newTokensSpent, `${activeTimer.appName} usage`);
+          setActiveTimer(prev => prev ? {
+            ...prev,
+            tokensSpent: tokensToSpend
+          } : null);
+        } else {
+          // Insufficient balance - stop timer
+          Alert.alert(
+            'Insufficient Balance',
+            `Your balance is too low to continue using ${activeTimer.appName}. The timer has been stopped.`,
+            [{ text: 'OK' }]
+          );
+          stopTimer();
+        }
+      }
+    }, 1000); // Update every second
+
+    return () => clearInterval(interval);
+  }, [activeTimer, balance, spendTokens, tokensPerMinute]);
+
+  const startTimer = (appName: string) => {
+    const now = Date.now();
+    setActiveTimer({
+      appName,
+      startTime: now,
+      tokensSpent: 0
+    });
+    setCurrentTime(now);
+    
+    // Spend initial tokens for the first minute
+    spendTokens(tokensPerMinute, `${appName} initial usage`);
+    
+    console.log(`Timer started for ${appName}`);
+  };
+
+  const stopTimer = () => {
+    if (activeTimer) {
+      console.log(`Timer stopped for ${activeTimer.appName}. Total spent: ${activeTimer.tokensSpent} tokens`);
+      setActiveTimer(null);
+    }
+  };
+
   const checkAppAvailability = async () => {
     const availability: Record<string, boolean> = {};
     
     for (const app of apps) {
       try {
-        // Try to check if the deep link can be opened
-        const canOpen = await Linking.canOpenURL(app.deepLink || app.webUrl || '');
-        availability[app.name] = canOpen;
+        if (Platform.OS === 'web') {
+          // On web, all apps are "available" via web URLs
+          availability[app.name] = true;
+        } else if (Platform.OS === 'android') {
+          // On Android, we'll assume apps are available and handle failures during launch
+          // This is because Android restricts package queries for security
+          // We'll show them as available and handle the "not installed" case during launch
+          availability[app.name] = true;
+        } else {
+          // On iOS, try to check if the deep link can be opened
+          const canOpen = await Linking.canOpenURL(app.deepLink || app.webUrl || '');
+          availability[app.name] = canOpen;
+        }
       } catch (error) {
-        // If deep link check fails, assume web fallback is available
+        console.warn(`Error checking availability for ${app.name}:`, error);
+        // Default to available - we'll handle launch failures gracefully
         availability[app.name] = true;
       }
     }
     
+    console.log('App availability check completed:', availability);
     setAppAvailability(availability);
   };
 
   const launchApp = async (app: AppConfig) => {
+    // Check if timer is already running
+    if (activeTimer) {
+      Alert.alert(
+        'Timer Already Running',
+        `${activeTimer.appName} timer is active. Stop it first before launching another app.`,
+        [
+          { text: 'OK' },
+          { text: 'Stop Timer', onPress: stopTimer }
+        ]
+      );
+      return;
+    }
+
     // Check if user has sufficient balance
-    if (balance < minTokensRequired) {
-      const error = AppLaunchErrorHandler.createAppLaunchError(
-        'INSUFFICIENT_BALANCE',
-        app.name,
-        undefined,
-        0
+    if (balance < tokensPerMinute) {
+      Alert.alert(
+        'Insufficient Balance',
+        `You need at least ${tokensPerMinute} tokens to launch ${app.name}. You currently have ${balance} tokens.\n\nComplete quests to earn more tokens!`,
+        [
+          { text: 'OK' },
+          { text: 'Go to Quests', onPress: () => onInsufficientBalance?.() }
+        ]
       );
-      
-      await AppLaunchErrorHandler.handleAppLaunchError(
-        error,
-        (amount, description) => refundTokens(amount, description),
-        { suggestAlternatives: true }
-      );
-      
-      onInsufficientBalance?.();
       return;
     }
 
     try {
       setLaunchingApp(app.name);
-
-      // Spend initial tokens for app launch
-      await spendTokens(minTokensRequired, `Launched ${app.name}`, app.name);
+      console.log(`Launching ${app.name} with timer system`);
 
       // Try to open the app
       const launched = await attemptAppLaunch(app);
       
       if (launched) {
-        // Notify parent component
+        // Start the timer
+        startTimer(app.name);
         onAppLaunch?.(app);
-        
-        // Show success feedback
-        Alert.alert(
-          'App Launched',
-          `${app.name} has been launched! Tokens will be deducted at ${tokensPerMinute} per minute while you use the app.`,
-          [{ text: 'OK' }]
-        );
       } else {
-        // Create appropriate error based on failure type
-        const error = AppLaunchErrorHandler.createAppLaunchError(
-          'DEEP_LINK_FAILED',
-          app.name,
-          undefined,
-          minTokensRequired
-        );
-        
-        await AppLaunchErrorHandler.handleAppLaunchError(
-          error,
-          (amount, description) => refundTokens(amount, description),
-          { 
-            showAlert: true,
-            suggestAlternatives: true,
-            autoRefund: true,
-            logError: true
-          }
+        Alert.alert(
+          'App Launch Failed',
+          `Unable to open ${app.name}. No tokens were charged.`,
+          [{ text: 'OK' }]
         );
       }
 
     } catch (error) {
       console.error('Error launching app:', error);
-      
-      // Determine error type based on the error
-      let errorType: AppLaunchError['type'] = 'UNKNOWN';
-      if (error instanceof Error) {
-        if (error.message.includes('network') || error.message.includes('Network')) {
-          errorType = 'NETWORK_ERROR';
-        } else if (error.message.includes('balance') || error.message.includes('Balance')) {
-          errorType = 'INSUFFICIENT_BALANCE';
-        }
-      }
-      
-      const appError = AppLaunchErrorHandler.createAppLaunchError(
-        errorType,
-        app.name,
-        error instanceof Error ? error : new Error('Unknown error'),
-        minTokensRequired
-      );
-      
-      await AppLaunchErrorHandler.handleAppLaunchError(
-        appError,
-        (amount, description) => refundTokens(amount, description),
-        { 
-          showAlert: true,
-          suggestAlternatives: true,
-          autoRefund: true,
-          logError: true
-        }
+      Alert.alert(
+        'Launch Error',
+        `There was an error launching ${app.name}. Please try again.`,
+        [{ text: 'OK' }]
       );
     } finally {
       setLaunchingApp(null);
@@ -271,45 +311,73 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
 
   const attemptAppLaunch = async (app: AppConfig): Promise<boolean> => {
     try {
+      console.log(`Attempting to launch ${app.name} on ${Platform.OS}`);
+      
       // On web platform, prioritize web URLs
       if (Platform.OS === 'web' && app.webUrl) {
+        console.log(`Opening web URL: ${app.webUrl}`);
         await Linking.openURL(app.webUrl);
         return true;
       }
 
       // On mobile, try deep link first
       if (app.deepLink) {
-        const canOpenDeepLink = await Linking.canOpenURL(app.deepLink);
-        if (canOpenDeepLink) {
-          await Linking.openURL(app.deepLink);
-          return true;
+        console.log(`Trying deep link: ${app.deepLink}`);
+        try {
+          // On Android, we can't reliably check canOpenURL for all apps
+          // So we'll try to open directly and catch the error
+          if (Platform.OS === 'android') {
+            await Linking.openURL(app.deepLink);
+            console.log(`Successfully opened ${app.name} via deep link`);
+            return true;
+          } else {
+            // On iOS, check first then open
+            const canOpenDeepLink = await Linking.canOpenURL(app.deepLink);
+            if (canOpenDeepLink) {
+              await Linking.openURL(app.deepLink);
+              console.log(`Successfully opened ${app.name} via deep link`);
+              return true;
+            }
+          }
+        } catch (deepLinkError) {
+          console.log(`Deep link failed for ${app.name}:`, deepLinkError);
+          // Continue to web fallback
         }
       }
 
-      // Fallback to web URL for mobile
+      // Fallback to web URL
       if (app.webUrl) {
-        const canOpenWeb = await Linking.canOpenURL(app.webUrl);
-        if (canOpenWeb) {
+        console.log(`Trying web fallback: ${app.webUrl}`);
+        try {
           await Linking.openURL(app.webUrl);
+          console.log(`Successfully opened ${app.name} via web URL`);
           return true;
-        } else {
-          // Web fallback also failed
-          const error = AppLaunchErrorHandler.createAppLaunchError(
-            'WEB_FALLBACK_FAILED',
-            app.name,
-            new Error('Web URL cannot be opened'),
-            minTokensRequired
-          );
+        } catch (webError) {
+          console.log(`Web fallback failed for ${app.name}:`, webError);
           
-          await AppLaunchErrorHandler.handleAppLaunchError(
-            error,
-            (amount, description) => refundTokens(amount, description),
-            { 
-              showAlert: true,
-              suggestAlternatives: true,
-              autoRefund: true,
-              logError: true
-            }
+          // Show user-friendly message for app not installed
+          Alert.alert(
+            `${app.name} Not Available`,
+            `${app.name} is not installed on your device. Would you like to install it from the app store?`,
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { 
+                text: 'Install', 
+                onPress: () => {
+                  // Try to open app store
+                  const storeUrl = Platform.OS === 'android' 
+                    ? `market://details?id=${app.packageName}`
+                    : `https://apps.apple.com/search?term=${encodeURIComponent(app.name)}`;
+                  Linking.openURL(storeUrl).catch(() => {
+                    // Fallback to web store
+                    const webStoreUrl = Platform.OS === 'android'
+                      ? `https://play.google.com/store/apps/details?id=${app.packageName}`
+                      : `https://apps.apple.com/search?term=${encodeURIComponent(app.name)}`;
+                    Linking.openURL(webStoreUrl);
+                  });
+                }
+              }
+            ]
           );
           return false;
         }
@@ -319,28 +387,11 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
     } catch (error) {
       console.error(`Failed to launch ${app.name}:`, error);
       
-      // Determine specific error type
-      let errorType: AppLaunchError['type'] = 'DEEP_LINK_FAILED';
-      if (error instanceof Error && error.message.includes('network')) {
-        errorType = 'NETWORK_ERROR';
-      }
-      
-      const appError = AppLaunchErrorHandler.createAppLaunchError(
-        errorType,
-        app.name,
-        error instanceof Error ? error : new Error('Unknown launch error'),
-        minTokensRequired
-      );
-      
-      await AppLaunchErrorHandler.handleAppLaunchError(
-        appError,
-        (amount, description) => refundTokens(amount, description),
-        { 
-          showAlert: false, // Don't show alert here, let the caller handle it
-          suggestAlternatives: true,
-          autoRefund: true,
-          logError: true
-        }
+      // Show user-friendly error message
+      Alert.alert(
+        'App Launch Failed',
+        `Unable to open ${app.name}. This might be because:\n\n• The app is not installed\n• The app doesn't support this launch method\n• There's a temporary issue\n\nYour tokens have been refunded.`,
+        [{ text: 'OK' }]
       );
       
       return false;
@@ -349,9 +400,10 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
 
   const renderAppItem = ({ item: app }: { item: AppConfig }) => {
     const isAvailable = appAvailability[app.name] !== false;
-    const canAfford = balance >= minTokensRequired;
+    const canAfford = balance >= tokensPerMinute;
     const isLaunching = launchingApp === app.name;
-    const isDisabled = !isAvailable || !canAfford || isLoading || isLaunching;
+    const isTimerRunning = activeTimer?.appName === app.name;
+    const isDisabled = !canAfford || isLoading || isLaunching || (activeTimer && !isTimerRunning);
 
     return (
       <TouchableOpacity
@@ -379,19 +431,21 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
           {app.category}
         </Text>
         
-        {!isAvailable && (
-          <Text style={styles.unavailableText}>Not Available</Text>
-        )}
-        
-        {isAvailable && !canAfford && (
-          <Text style={styles.insufficientText}>
-            Need {minTokensRequired - balance} more tokens
+        {isTimerRunning ? (
+          <Text style={styles.runningText}>
+            ⏱️ Timer Active
           </Text>
-        )}
-        
-        {isAvailable && canAfford && (
+        ) : !canAfford ? (
+          <Text style={styles.insufficientText}>
+            Need {tokensPerMinute - balance} more tokens
+          </Text>
+        ) : activeTimer ? (
+          <Text style={styles.blockedText}>
+            Stop current timer first
+          </Text>
+        ) : (
           <Text style={styles.costText}>
-            {minTokensRequired} tokens to start
+            {tokensPerMinute} tokens/min
           </Text>
         )}
       </TouchableOpacity>
@@ -412,11 +466,35 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
         },
       ]}
     >
+      {/* Active Timer Display */}
+      {activeTimer && (
+        <View style={styles.timerDisplay}>
+          <View style={styles.timerHeader}>
+            <Text style={styles.timerAppName}>{activeTimer.appName}</Text>
+            <TouchableOpacity style={styles.stopTimerButton} onPress={stopTimer}>
+              <Text style={styles.stopTimerText}>⏹️ Stop</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.timerStats}>
+            <Text style={styles.timerTime}>
+              {Math.floor((currentTime - activeTimer.startTime) / 60000)}:
+              {Math.floor(((currentTime - activeTimer.startTime) % 60000) / 1000).toString().padStart(2, '0')}
+            </Text>
+            <Text style={styles.timerSpent}>
+              Spent: {activeTimer.tokensSpent} tokens
+            </Text>
+            <Text style={styles.timerRemaining}>
+              Remaining: ~{Math.floor(balance / tokensPerMinute)} min
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Entertainment Apps</Text>
         <Text style={styles.balanceInfo}>
-          Balance: {balance} tokens ({Math.floor(balance / tokensPerMinute)} minutes)
+          Balance: {balance} tokens ({Math.floor(balance / tokensPerMinute)} minutes available)
         </Text>
       </View>
 
@@ -425,7 +503,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
         <View style={styles.appsGrid}>
           {apps.map((item, index) => (
             <View key={item.name} style={styles.appItemWrapper}>
-              {renderAppItem({ item, index })}
+              {renderAppItem({ item })}
             </View>
           ))}
         </View>
@@ -446,13 +524,13 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
       {/* Usage Info */}
       <View style={styles.infoContainer}>
         <Text style={styles.infoText}>
-          • Apps cost {minTokensRequired} tokens to launch
+          • Apps charge {tokensPerMinute} tokens per minute of usage
         </Text>
         <Text style={styles.infoText}>
-          • Usage is charged at {tokensPerMinute} tokens per minute
+          • Timer starts when app launches successfully
         </Text>
         <Text style={styles.infoText}>
-          • Time tracking continues until you return to this app
+          • Return here to stop the timer and save tokens
         </Text>
       </View>
     </Animated.View>
@@ -572,6 +650,84 @@ const styles = StyleSheet.create({
     color: colors.accent,
     textAlign: 'center',
     fontWeight: '600',
+  } as TextStyle,
+
+  runningText: {
+    fontSize: 12,
+    color: colors.success,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  } as TextStyle,
+
+  blockedText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  } as TextStyle,
+
+  // Timer Display Styles
+  timerDisplay: {
+    backgroundColor: colors.cardBg,
+    borderRadius: 12,
+    padding: 16,
+    margin: 16,
+    borderWidth: 2,
+    borderColor: colors.success,
+    shadowColor: colors.success,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
+  } as ViewStyle,
+
+  timerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  } as ViewStyle,
+
+  timerAppName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.success,
+  } as TextStyle,
+
+  stopTimerButton: {
+    backgroundColor: colors.error,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  } as ViewStyle,
+
+  stopTimerText: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: 'bold',
+  } as TextStyle,
+
+  timerStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  } as ViewStyle,
+
+  timerTime: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.primary,
+    fontFamily: 'monospace',
+  } as TextStyle,
+
+  timerSpent: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  } as TextStyle,
+
+  timerRemaining: {
+    fontSize: 12,
+    color: colors.accent,
   } as TextStyle,
 
   unavailableText: {

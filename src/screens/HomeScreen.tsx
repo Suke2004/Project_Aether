@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
 import { WalletCard } from '../components/WalletCard';
 import { AppLauncher } from '../components/AppLauncher';
+import { RealTimeClock } from '../components/RealTimeClock';
 import { AppConfig } from '../lib/types';
 
 // Import the RootStackParamList type
@@ -58,9 +59,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { user, profile, hasRole } = useAuth();
   const { balance, isLoading } = useWallet();
-  
-  // Component state - removed all animations
-  const [currentTime] = useState(new Date());
 
   // Ensure only child users can access this screen
   if (!hasRole('child')) {
@@ -95,16 +93,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     navigation.navigate('Settings');
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
-    });
+  const handleNavigateToParentDashboard = () => {
+    navigation.navigate('ParentDashboard');
   };
 
   const getGreeting = () => {
-    const hour = currentTime.getHours();
+    const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
     if (hour < 17) return 'Good Afternoon';
     return 'Good Evening';
@@ -125,16 +119,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </Text>
             </View>
             
-            <View style={styles.timeSection}>
-              <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
-              <Text style={styles.dateText}>
-                {currentTime.toLocaleDateString([], { 
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric'
-                })}
-              </Text>
-            </View>
+            <RealTimeClock
+              timeStyle={styles.timeText}
+              dateStyle={styles.dateText}
+              showDate={true}
+              showSeconds={false}
+              format24Hour={false}
+            />
           </View>
 
           {/* Navigation Buttons */}
@@ -156,6 +147,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <Text style={styles.navButtonIcon}>⚙️</Text>
               <Text style={styles.navButtonText}>Settings</Text>
             </TouchableOpacity>
+
+            {/* Parent Dashboard Button - Only show for parent role */}
+            {hasRole('parent') && (
+              <TouchableOpacity
+                style={[styles.navButton, styles.parentButton]}
+                onPress={handleNavigateToParentDashboard}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.navButtonIcon}>👨‍👩‍👧‍👦</Text>
+                <Text style={styles.navButtonText}>Dashboard</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Cyberpunk border effects */}
@@ -172,7 +175,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             right: '0',
             bottom: '60px', // Fixed position above footer
             overflowY: 'scroll',
-            overflowX: 'hidden',
             backgroundColor: '#0a0a0a',
             padding: '16px',
             WebkitOverflowScrolling: 'touch',
@@ -321,6 +323,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: 8,
     minWidth: 80,
+  } as ViewStyle,
+
+  parentButton: {
+    backgroundColor: colors.secondary,
+    borderWidth: 1,
+    borderColor: colors.secondary,
   } as ViewStyle,
 
   navButtonIcon: {

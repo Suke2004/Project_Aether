@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 echo "Installing Aether - Attention Wallet for Android..."

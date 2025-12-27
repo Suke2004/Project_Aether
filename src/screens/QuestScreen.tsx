@@ -45,7 +45,7 @@ export const QuestScreen: React.FC<QuestScreenProps> = ({
   onQuestComplete,
 }) => {
   const { hasRole } = useAuth();
-  const { balance } = useWallet();
+  const { balance, earnTokens } = useWallet();
   
   // Component state
   const [questTypes, setQuestTypes] = useState<QuestType[]>([]);
@@ -61,11 +61,23 @@ export const QuestScreen: React.FC<QuestScreenProps> = ({
   const loadQuestTypes = async () => {
     try {
       setIsLoading(true);
+      console.log('Loading quest types...');
+      
+      // For now, let's use fallback quests to ensure functionality
+      // Later we can implement proper database integration
+      let activeQuests: QuestType[] = [];
       
       // Try to load from database first
-      let activeQuests: QuestType[] = [];
       try {
+        console.log('Attempting to load quests from database...');
         activeQuests = await dbHelpers.getActiveQuestTypes();
+        console.log('Database quests loaded:', activeQuests.length);
+        
+        // If no quests from database, use fallback
+        if (activeQuests.length === 0) {
+          console.log('No quests in database, using fallback quests');
+          throw new Error('No quests in database');
+        }
       } catch (dbError) {
         console.warn('Database quest loading failed, using fallback quests:', dbError);
         
@@ -73,54 +85,81 @@ export const QuestScreen: React.FC<QuestScreenProps> = ({
         activeQuests = [
           {
             id: 'demo-1',
-            name: 'Clean Your Room',
+            name: '🧹 Clean Your Room',
             description: 'Organize your bedroom, make your bed, and put away all clothes and toys.',
             token_reward: 15,
+            verification_prompt: 'Take a photo of your clean, organized room showing the made bed and tidy space.',
             is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_by: 'system',
           },
           {
             id: 'demo-2',
-            name: 'Read for 20 Minutes',
+            name: '📚 Read for 20 Minutes',
             description: 'Read a book, magazine, or educational article for at least 20 minutes.',
             token_reward: 10,
+            verification_prompt: 'Take a photo of yourself reading or the book/article you read.',
             is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_by: 'system',
           },
           {
             id: 'demo-3',
-            name: 'Help with Dishes',
+            name: '🍽️ Help with Dishes',
             description: 'Help wash, dry, or put away dishes after a meal.',
             token_reward: 8,
+            verification_prompt: 'Take a photo of the clean dishes or yourself helping with dishwashing.',
             is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_by: 'system',
           },
           {
             id: 'demo-4',
-            name: 'Exercise for 15 Minutes',
+            name: '🏃 Exercise for 15 Minutes',
             description: 'Do jumping jacks, push-ups, go for a walk, or any physical activity.',
             token_reward: 12,
+            verification_prompt: 'Take a photo of yourself exercising or show evidence of your physical activity.',
             is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_by: 'system',
           },
           {
             id: 'demo-5',
-            name: 'Practice Math Problems',
+            name: '🧮 Practice Math Problems',
             description: 'Complete 10 math problems or practice math skills for 15 minutes.',
             token_reward: 20,
+            verification_prompt: 'Take a photo of your completed math problems or math practice work.',
             is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_by: 'system',
+          },
+          {
+            id: 'demo-6',
+            name: '🎒 Organize Your Backpack',
+            description: 'Clean out and organize your school backpack, removing trash and organizing supplies.',
+            token_reward: 8,
+            verification_prompt: 'Take a photo of your organized backpack with supplies neatly arranged.',
+            is_active: true,
+            created_by: 'system',
+          },
+          {
+            id: 'demo-7',
+            name: '🌱 Water Plants',
+            description: 'Water the plants in your home or garden and check if they need care.',
+            token_reward: 6,
+            verification_prompt: 'Take a photo of yourself watering plants or the plants you cared for.',
+            is_active: true,
+            created_by: 'system',
+          },
+          {
+            id: 'demo-8',
+            name: '🎵 Practice Musical Instrument',
+            description: 'Practice playing a musical instrument for at least 15 minutes.',
+            token_reward: 15,
+            verification_prompt: 'Take a photo or video of yourself practicing your instrument.',
+            is_active: true,
+            created_by: 'system',
           },
         ];
       }
       
+      console.log('Final quest count:', activeQuests.length);
       setQuestTypes(activeQuests);
-      console.log('Loaded quest types:', activeQuests.length);
     } catch (error) {
       console.error('Failed to load quest types:', error);
       Alert.alert(
@@ -155,31 +194,45 @@ export const QuestScreen: React.FC<QuestScreenProps> = ({
     setShowCamera(true);
   };
 
-  const handleQuestComplete = (success: boolean, tokensEarned?: number) => {
+  const handleQuestComplete = async (success: boolean, tokensEarned?: number) => {
     setShowCamera(false);
+    const completedQuest = selectedQuest;
     setSelectedQuest(null);
 
-    if (success && tokensEarned) {
-      // Show success feedback
-      Alert.alert(
-        '🎉 Quest Complete!',
-        `Congratulations! You earned ${tokensEarned} tokens for completing "${selectedQuest?.name}".`,
-        [
-          {
-            text: 'Continue',
-            onPress: () => {
-              onQuestComplete?.(tokensEarned);
+    if (success && tokensEarned && completedQuest) {
+      try {
+        // Award tokens to the user
+        await earnTokens(tokensEarned, `Quest completed: ${completedQuest.name}`, 'demo-completion');
+        
+        // Show success feedback
+        Alert.alert(
+          '🎉 Quest Complete!',
+          `Congratulations! You earned ${tokensEarned} tokens for completing "${completedQuest.name}".\n\nYour new balance will be updated shortly.`,
+          [
+            {
+              text: 'Continue',
+              onPress: () => {
+                onQuestComplete?.(tokensEarned);
+                console.log(`Quest completed: ${completedQuest.name}, tokens earned: ${tokensEarned}`);
+              },
             },
-          },
-        ]
-      );
+          ]
+        );
+      } catch (error) {
+        console.error('Error awarding tokens:', error);
+        Alert.alert(
+          'Error',
+          'Quest completed but there was an issue awarding tokens. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
     } else {
       // Show failure feedback with encouragement
       Alert.alert(
         'Quest Not Complete',
-        'The AI couldn\'t verify your quest completion. Don\'t worry - try again or choose a different quest!',
+        'The verification couldn\'t be completed. Don\'t worry - try again or choose a different quest!',
         [
-          { text: 'Try Again', onPress: () => handleQuestSelect(selectedQuest!) },
+          { text: 'Try Again', onPress: () => completedQuest && handleQuestSelect(completedQuest) },
           { text: 'Choose Different Quest', style: 'cancel' },
         ]
       );
@@ -191,11 +244,38 @@ export const QuestScreen: React.FC<QuestScreenProps> = ({
     setSelectedQuest(null);
   };
 
+  // For web testing, let's add a simple quest completion simulation
+  const handleWebQuestComplete = async (quest: QuestType) => {
+    if (Platform.OS === 'web') {
+      Alert.alert(
+        'Complete Quest: ' + quest.name,
+        quest.description + '\n\nFor web testing, we\'ll simulate quest completion. In the mobile app, you would take a photo for verification.',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Mark as Complete',
+            onPress: async () => {
+              // Simulate successful completion
+              setSelectedQuest(quest); // Set the selected quest for the completion handler
+              await handleQuestComplete(true, quest.token_reward);
+            },
+          },
+        ]
+      );
+    } else {
+      // On mobile, use the camera
+      handleQuestSelect(quest);
+    }
+  };
+
   const renderQuestItem = ({ item: quest }: { item: QuestType }) => {
     return (
       <TouchableOpacity
         style={styles.questItem}
-        onPress={() => handleQuestSelect(quest)}
+        onPress={() => handleWebQuestComplete(quest)}
         activeOpacity={0.7}
       >
         <View style={styles.questHeader}>
@@ -308,7 +388,7 @@ export const QuestScreen: React.FC<QuestScreenProps> = ({
                   <div key={quest.id} style={{ marginBottom: index < questTypes.length - 1 ? '16px' : '0' }}>
                     <TouchableOpacity
                       style={styles.questItem}
-                      onPress={() => handleQuestSelect(quest)}
+                      onPress={() => handleWebQuestComplete(quest)}
                       activeOpacity={0.7}
                     >
                       <View style={styles.questHeader}>

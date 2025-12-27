@@ -174,10 +174,10 @@ export class ManualVerificationService {
    */
   static async waitForManualVerification(
     requestId: string,
-    timeoutMs: number = 300000 // 5 minutes default
+    timeoutMs: number = 120000 // 2 minutes default (increased from 5 minutes)
   ): Promise<ManualVerificationResult | null> {
     const startTime = Date.now();
-    const pollInterval = 5000; // Poll every 5 seconds
+    const pollInterval = 3000; // Poll every 3 seconds (reduced from 5)
 
     while (Date.now() - startTime < timeoutMs) {
       const request = await this.checkVerificationStatus(requestId);
@@ -320,7 +320,7 @@ export class ManualVerificationService {
       requestId: request.id,
     });
 
-    // Show immediate alert if parent is using the app
+    // Show immediate alert if parent is using the app (reduced delay)
     setTimeout(() => {
       Alert.alert(
         'Verification Needed',
@@ -328,9 +328,10 @@ export class ManualVerificationService {
         [
           { text: 'Later', style: 'cancel' },
           { text: 'Review Now', onPress: () => this.showParentVerificationDialog(request) },
-        ]
+        ],
+        { cancelable: false } // Prevent accidental dismissal
       );
-    }, 1000);
+    }, 500); // Reduced from 1000ms
   }
 }
 

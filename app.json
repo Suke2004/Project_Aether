@@ -2,6 +2,7 @@
   "expo": {
     "name": "Aether - Attention Wallet",
     "slug": "aether-attention-wallet",
+    "scheme": "aether-wallet", 
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

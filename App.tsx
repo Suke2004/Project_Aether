@@ -9,6 +9,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth, ThemeProvider } from './src/context';
 import { WalletProvider } from './src/context';
 
+// Components
+import { DevRoleSwitcher } from './src/components';
+
 // Screens
 import { 
   HomeScreen, 
@@ -221,6 +224,7 @@ export default function App() {
               <View style={styles.container}>
                 <StatusBar style="light" backgroundColor="#0a0a0a" />
                 <AppNavigator />
+                <DevRoleSwitcher />
               </View>
             </WalletProvider>
           </AuthProvider>

@@ -1,9 +1,3 @@
-/**
- * LockScreen Component
- * Blocking interface when tokens are depleted with encouraging messages
- * Requirements: 2.3, 5.4
- */
-
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -22,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
 import { QuestType } from '../lib/types';
 import { dbHelpers } from '../lib/supabase';
+import { RealTimeClock } from '../components/RealTimeClock';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -263,6 +258,17 @@ export const LockScreen: React.FC<LockScreenProps> = ({
           },
         ]}
       >
+        {/* Current Time Display */}
+        <View style={styles.timeSection}>
+          <RealTimeClock
+            timeStyle={styles.currentTimeText}
+            dateStyle={styles.currentDateText}
+            showDate={true}
+            showSeconds={true}
+            format24Hour={false}
+          />
+        </View>
+        
         {/* Lock Icon and Status */}
         <View style={styles.lockSection}>
           <Animated.View
@@ -384,6 +390,26 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'space-between',
   } as ViewStyle,
+
+  timeSection: {
+    alignItems: 'center',
+    paddingTop: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primary + '30',
+  } as ViewStyle,
+
+  currentTimeText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.primary,
+  } as TextStyle,
+
+  currentDateText: {
+    fontSize: 14,
+    color: colors.accent,
+    marginTop: 4,
+  } as TextStyle,
 
   lockSection: {
     alignItems: 'center',

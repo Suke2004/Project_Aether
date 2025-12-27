@@ -1,9 +1,3 @@
-/**
- * Parent Dashboard Screen
- * Displays real-time balance, transaction history, and analytics charts
- * Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 7.5
- */
-
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -21,7 +15,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import { useAuth, useWallet } from '../context';
 import { Transaction, Profile } from '../lib/types';
 import { dbHelpers, realtimeHelpers, getSupabaseClient } from '../lib/supabase';
-import { QuestManagement } from '../components';
+import { QuestManagement, RealTimeClock } from '../components';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -627,6 +621,21 @@ const ParentDashboard: React.FC = () => {
         <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
       }
     >
+      {/* Dashboard Header */}
+      <View style={styles.dashboardHeader}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.dashboardTitle}>Parent Dashboard</Text>
+          <Text style={styles.dashboardSubtitle}>Monitor & Manage</Text>
+        </View>
+        <RealTimeClock
+          timeStyle={styles.headerTimeText}
+          dateStyle={styles.headerDateText}
+          showDate={true}
+          showSeconds={false}
+          format24Hour={false}
+        />
+      </View>
+      
       {renderConnectionStatus()}
       {renderChildSelector()}
       {renderBalanceOverview()}
@@ -648,6 +657,44 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0a0a0a',
     padding: 20,
+  },
+  
+  // Dashboard Header Styles
+  dashboardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  
+  headerLeft: {
+    flex: 1,
+  },
+  
+  dashboardTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#00ffff',
+    marginBottom: 4,
+  },
+  
+  dashboardSubtitle: {
+    fontSize: 14,
+    color: '#b0b0b0',
+  },
+  
+  headerTimeText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  
+  headerDateText: {
+    fontSize: 12,
+    color: '#b0b0b0',
   },
   
   // Connection Status Styles

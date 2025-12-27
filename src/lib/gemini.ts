@@ -1,8 +1,3 @@
-/**
- * Google Gemini AI service for quest verification
- * Handles image analysis and quest completion validation
- */
-
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_CONFIG, APP_CONFIG } from './config';
 import { AIVerificationResult } from './types';
@@ -149,7 +144,7 @@ Be encouraging but fair in your assessment. The confidence score should reflect 
       );
     }
 
-    const response = await result.response;
+    const response = result.response;
     const text = response.text();
 
     // Parse the JSON response
@@ -187,55 +182,14 @@ Be encouraging but fair in your assessment. The confidence score should reflect 
       };
     }
 
+    console.log('AI verification completed:', parsedResult);
     return parsedResult;
 
   } catch (error) {
-    // Handle AI service errors with fallback mechanisms
-    if (error instanceof Error && 'type' in error) {
-      const aiError = error as AIServiceError;
-      
-      const { shouldRetry, manualVerificationRequested } = await AIServiceErrorHandler.handleAIServiceError(
-        aiError,
-        requestManualVerification
-      );
-
-      if (manualVerificationRequested) {
-        // Return a result indicating manual verification was requested
-        return {
-          isValid: false,
-          confidence: 0,
-          reasoning: 'Manual verification requested due to AI service unavailability',
-        };
-      }
-
-      if (shouldRetry) {
-        // This will be handled by the retry wrapper
-        throw aiError;
-      }
-    }
+    console.error('AI verification error:', error);
     
-    // For unknown errors, create a generic AI service error
-    const genericError = AIServiceErrorHandler.createAIServiceError(
-      'API_ERROR',
-      error instanceof Error ? error.message : 'Unknown AI service error',
-      true,
-      error instanceof Error ? error : undefined
-    );
-
-    const { shouldRetry, manualVerificationRequested } = await AIServiceErrorHandler.handleAIServiceError(
-      genericError,
-      requestManualVerification
-    );
-
-    if (manualVerificationRequested) {
-      return {
-        isValid: false,
-        confidence: 0,
-        reasoning: 'Manual verification requested due to AI service error',
-      };
-    }
-
-    throw genericError;
+    // Simply throw the error - let the caller handle it
+    throw error;
   }
 };
 
@@ -274,7 +228,7 @@ export const checkGeminiHealth = async (): Promise<boolean> => {
     
     const model = genAI.getGenerativeModel({ model: GEMINI_CONFIG.model });
     const result = await model.generateContent('Hello, are you working?');
-    const response = await result.response;
+    const response = result.response;
     
     return response.text().length > 0;
   } catch (error) {
