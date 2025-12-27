@@ -1,10 +1,4 @@
-/**
- * HomeScreen Component
- * Main child interface integrating WalletCard and AppLauncher components
- * Requirements: 2.1, 5.1, 5.2
- */
-
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -14,15 +8,28 @@ import {
   Dimensions,
   ViewStyle,
   TextStyle,
-  Animated,
-  SafeAreaView,
   StatusBar,
+  Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
 import { WalletCard } from '../components/WalletCard';
 import { AppLauncher } from '../components/AppLauncher';
 import { AppConfig } from '../lib/types';
+
+// Import the RootStackParamList type
+type RootStackParamList = {
+  Home: undefined;
+  Quest: undefined;
+  Settings: undefined;
+  Lock: undefined;
+  ParentDashboard: undefined;
+};
+
+type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -40,72 +47,20 @@ const colors = {
 };
 
 interface HomeScreenProps {
-  onNavigateToQuests?: () => void;
-  onNavigateToSettings?: () => void;
   onAppLaunch?: (app: AppConfig) => void;
   onInsufficientBalance?: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
-  onNavigateToQuests,
-  onNavigateToSettings,
   onAppLaunch,
   onInsufficientBalance,
 }) => {
+  const navigation = useNavigation<HomeScreenNavigationProp>();
   const { user, profile, hasRole } = useAuth();
   const { balance, isLoading } = useWallet();
   
-  // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
-  const headerGlowAnim = useRef(new Animated.Value(0)).current;
-  
-  // Component state
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  // Update time every minute
-  useEffect(() => {
-    const timeInterval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-
-    return () => clearInterval(timeInterval);
-  }, []);
-
-  // Animate component entrance
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Start header glow animation
-    const glowLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(headerGlowAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: false,
-        }),
-        Animated.timing(headerGlowAnim, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-    glowLoop.start();
-
-    return () => glowLoop.stop();
-  }, []);
+  // Component state - removed all animations
+  const [currentTime] = useState(new Date());
 
   // Ensure only child users can access this screen
   if (!hasRole('child')) {
@@ -129,7 +84,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const handleInsufficientBalance = () => {
     console.log('Insufficient balance, navigating to quests');
     onInsufficientBalance?.();
-    onNavigateToQuests?.();
+    navigation.navigate('Quest');
+  };
+
+  const handleNavigateToQuests = () => {
+    navigation.navigate('Quest');
+  };
+
+  const handleNavigateToSettings = () => {
+    navigation.navigate('Settings');
   };
 
   const formatTime = (date: Date) => {
@@ -147,35 +110,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     return 'Good Evening';
   };
 
-  // Animated glow intensity
-  const glowIntensity = headerGlowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [5, 15],
-    extrapolate: 'clamp',
-  });
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       
-      <Animated.View
-        style={[
-          styles.content,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          },
-        ]}
-      >
+      <View style={styles.content}>
         {/* Header Section */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              shadowRadius: glowIntensity,
-            },
-          ]}
-        >
+        <View style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.greetingSection}>
               <Text style={styles.greeting}>{getGreeting()}</Text>
@@ -200,7 +141,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <View style={styles.navButtons}>
             <TouchableOpacity
               style={styles.navButton}
-              onPress={onNavigateToQuests}
+              onPress={handleNavigateToQuests}
               activeOpacity={0.7}
             >
               <Text style={styles.navButtonIcon}>🎯</Text>
@@ -209,7 +150,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
             <TouchableOpacity
               style={styles.navButton}
-              onPress={onNavigateToSettings}
+              onPress={handleNavigateToSettings}
               activeOpacity={0.7}
             >
               <Text style={styles.navButtonIcon}>⚙️</Text>
@@ -220,72 +161,79 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {/* Cyberpunk border effects */}
           <View style={styles.headerBorderTop} />
           <View style={styles.headerBorderBottom} />
-        </Animated.View>
+        </View>
 
-        {/* Main Content */}
-        <ScrollView
-          style={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContainer}
-        >
-          {/* Wallet Card Section */}
-          <View style={styles.walletSection}>
-            <WalletCard
-              showDetails={true}
-              lowBalanceThreshold={25}
-              style={styles.walletCard}
-            />
-          </View>
+        {/* Main Content - Web-Compatible Scrollable */}
+        {Platform.OS === 'web' ? (
+          <div style={{
+            position: 'absolute',
+            top: '180px', // Fixed position below header
+            left: '0',
+            right: '0',
+            bottom: '60px', // Fixed position above footer
+            overflowY: 'scroll',
+            overflowX: 'hidden',
+            backgroundColor: '#0a0a0a',
+            padding: '16px',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'auto',
+            scrollbarColor: '#00ffff #333',
+          }}>
+            {/* Wallet Card Section */}
+            <div style={{ marginTop: '8px' }}>
+              <WalletCard
+                showDetails={true}
+                lowBalanceThreshold={25}
+                style={styles.walletCard}
+              />
+            </div>
 
-          {/* App Launcher Section */}
-          <View style={styles.launcherSection}>
-            <AppLauncher
-              minTokensRequired={5}
-              tokensPerMinute={5}
-              onAppLaunch={handleAppLaunch}
-              onInsufficientBalance={handleInsufficientBalance}
-              style={styles.appLauncher}
-            />
-          </View>
+            {/* App Launcher Section */}
+            <div style={{ marginTop: '16px' }}>
+              <AppLauncher
+                minTokensRequired={5}
+                tokensPerMinute={5}
+                onAppLaunch={handleAppLaunch}
+                onInsufficientBalance={handleInsufficientBalance}
+                style={styles.appLauncher}
+              />
+            </div>
 
-          {/* Status Messages */}
-          {balance === 0 && (
-            <View style={styles.statusMessage}>
-              <Text style={styles.statusTitle}>🚀 Ready to Earn?</Text>
-              <Text style={styles.statusText}>
-                Complete quests to earn tokens and unlock entertainment apps!
-              </Text>
-              <TouchableOpacity
-                style={styles.statusButton}
-                onPress={onNavigateToQuests}
-              >
-                <Text style={styles.statusButtonText}>Start Quests</Text>
-              </TouchableOpacity>
+            {/* Extra bottom spacing for scrolling */}
+            <div style={{ height: '50px' }}></div>
+          </div>
+        ) : (
+          <ScrollView 
+            style={styles.scrollContainer}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={true}
+            nestedScrollEnabled={true}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Wallet Card Section */}
+            <View style={styles.walletSection}>
+              <WalletCard
+                showDetails={true}
+                lowBalanceThreshold={25}
+                style={styles.walletCard}
+              />
             </View>
-          )}
 
-          {balance > 0 && balance < 25 && (
-            <View style={[styles.statusMessage, styles.warningMessage]}>
-              <Text style={styles.statusTitle}>⚠️ Low Balance</Text>
-              <Text style={styles.statusText}>
-                You're running low on tokens. Complete more quests to keep playing!
-              </Text>
-              <TouchableOpacity
-                style={styles.statusButton}
-                onPress={onNavigateToQuests}
-              >
-                <Text style={styles.statusButtonText}>Earn More</Text>
-              </TouchableOpacity>
+            {/* App Launcher Section */}
+            <View style={styles.launcherSection}>
+              <AppLauncher
+                minTokensRequired={5}
+                tokensPerMinute={5}
+                onAppLaunch={handleAppLaunch}
+                onInsufficientBalance={handleInsufficientBalance}
+                style={styles.appLauncher}
+              />
             </View>
-          )}
 
-          {/* Loading State */}
-          {isLoading && (
-            <View style={styles.loadingSection}>
-              <Text style={styles.loadingText}>Syncing wallet data...</Text>
-            </View>
-          )}
-        </ScrollView>
+            {/* Extra bottom spacing */}
+            <View style={styles.bottomSpacing} />
+          </ScrollView>
+        )}
 
         {/* Footer with cyberpunk styling */}
         <View style={styles.footer}>
@@ -293,7 +241,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <Text style={styles.footerText}>ATTENTION WALLET v1.0</Text>
           <View style={styles.footerLine} />
         </View>
-      </Animated.View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -407,11 +355,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   } as ViewStyle,
 
-  scrollContent: {
+  scrollContainer: {
     flex: 1,
+    backgroundColor: colors.background,
   } as ViewStyle,
 
-  scrollContainer: {
+  scrollContent: {
+    paddingHorizontal: 16,
     paddingBottom: 20,
   } as ViewStyle,
 
@@ -429,6 +379,10 @@ const styles = StyleSheet.create({
 
   appLauncher: {
     backgroundColor: 'transparent',
+  } as ViewStyle,
+
+  bottomSpacing: {
+    height: 50,
   } as ViewStyle,
 
   statusMessage: {

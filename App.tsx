@@ -14,16 +14,21 @@ import {
   HomeScreen, 
   QuestScreen, 
   LockScreen, 
+  SettingsScreen,
   ParentDashboard 
 } from './src/screens';
 
 // Web compatibility utilities
 import { configureWebCompatibility } from './src/lib/webUtils';
 
+// Android utilities
+import { getAndroidDeviceInfo, optimizeForAndroid } from './src/lib/androidUtils';
+
 // Types
 export type RootStackParamList = {
   Home: undefined;
   Quest: undefined;
+  Settings: undefined;
   Lock: undefined;
   ParentDashboard: undefined;
 };
@@ -139,6 +144,14 @@ const AppNavigator: React.FC = () => {
                   }}
                 />
                 <Stack.Screen 
+                  name="Settings" 
+                  component={SettingsScreen}
+                  options={{ 
+                    title: 'Settings',
+                    headerBackTitle: 'Back'
+                  }}
+                />
+                <Stack.Screen 
                   name="Lock" 
                   component={LockScreen}
                   options={{ 
@@ -176,9 +189,27 @@ const AppNavigator: React.FC = () => {
 
 // Main App Component
 export default function App() {
-  // Configure web compatibility on app start
+  // Configure platform-specific compatibility on app start
   useEffect(() => {
     configureWebCompatibility();
+    
+    // Android-specific initialization
+    if (Platform.OS === 'android') {
+      const deviceInfo = getAndroidDeviceInfo();
+      const optimizations = optimizeForAndroid();
+      
+      console.log('Android Device Info:', {
+        apiLevel: deviceInfo.apiLevel,
+        screenSize: deviceInfo.screenSize,
+        hasNotch: deviceInfo.hasNotch,
+      });
+      
+      console.log('Android Optimizations Applied:', {
+        enableAnimations: optimizations.enableAnimations,
+        animationDuration: optimizations.animationDuration,
+        enableMemoryOptimization: optimizations.enableMemoryOptimization,
+      });
+    }
   }, []);
 
   return (

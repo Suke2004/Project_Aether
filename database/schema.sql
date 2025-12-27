@@ -153,3 +153,8 @@ INSERT INTO quest_types (name, description, token_reward, verification_prompt, i
   ('Read for 30 Minutes', 'Take a photo of yourself with the book you just finished reading', 40, 'Analyze this image to verify reading activity. Look for a person with an open book, reading materials, or evidence of reading time such as bookmarks or reading notes.', true),
   ('Help with Cooking', 'Take a photo of the meal you helped prepare', 25, 'Analyze this image to verify cooking or meal preparation activity. Look for prepared food, cooking utensils being used, or ingredients that have been prepared.', true)
 ON CONFLICT DO NOTHING;
+
+-- Insert development profile for testing (only if it doesn't exist)
+INSERT INTO profiles (id, role, balance, total_earned, total_spent) VALUES
+  ('00000000-0000-0000-0000-000000000123', 'child', 50, 100, 50)
+ON CONFLICT (id) DO NOTHING;

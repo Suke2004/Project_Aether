@@ -30,6 +30,13 @@ interface QuestFormData {
   is_active: boolean;
 }
 
+interface QuestFormErrors {
+  name?: string;
+  description?: string;
+  token_reward?: string;
+  verification_prompt?: string;
+}
+
 interface QuestManagementProps {
   visible: boolean;
   onClose: () => void;
@@ -59,7 +66,7 @@ const QuestManagement: React.FC<QuestManagementProps> = ({ visible, onClose }) =
   });
   
   // Form validation state
-  const [formErrors, setFormErrors] = useState<Partial<QuestFormData>>({});
+  const [formErrors, setFormErrors] = useState<QuestFormErrors>({});
 
   // Load quest types when component becomes visible
   useEffect(() => {
@@ -127,7 +134,7 @@ const QuestManagement: React.FC<QuestManagementProps> = ({ visible, onClose }) =
    * Validate form data
    */
   const validateForm = (): boolean => {
-    const errors: Partial<QuestFormData> = {};
+    const errors: QuestFormErrors = {};
     
     // Name validation
     if (!formData.name.trim()) {
@@ -391,7 +398,7 @@ const QuestManagement: React.FC<QuestManagementProps> = ({ visible, onClose }) =
             <Text style={styles.formLabel}>Token Reward *</Text>
             <View style={styles.rewardContainer}>
               <TextInput
-                style={[styles.formInput, styles.rewardInput, formErrors.token_reward && styles.formInputError]}
+                style={[styles.formInput, styles.rewardInput, formErrors.token_reward ? styles.formInputError : null]}
                 value={formData.token_reward.toString()}
                 onChangeText={(text) => {
                   const num = parseInt(text) || 0;

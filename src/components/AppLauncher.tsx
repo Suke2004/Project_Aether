@@ -18,6 +18,7 @@ import {
   TextStyle,
   Animated,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useWallet } from '../context/WalletContext';
 import { AppConfig } from '../lib/types';
@@ -162,7 +163,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
     for (const app of apps) {
       try {
         // Try to check if the deep link can be opened
-        const canOpen = await Linking.canOpenURL(app.deepLink || app.webUrl);
+        const canOpen = await Linking.canOpenURL(app.deepLink || app.webUrl || '');
         availability[app.name] = canOpen;
       } catch (error) {
         // If deep link check fails, assume web fallback is available
@@ -270,7 +271,13 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
 
   const attemptAppLaunch = async (app: AppConfig): Promise<boolean> => {
     try {
-      // First, try the deep link if available
+      // On web platform, prioritize web URLs
+      if (Platform.OS === 'web' && app.webUrl) {
+        await Linking.openURL(app.webUrl);
+        return true;
+      }
+
+      // On mobile, try deep link first
       if (app.deepLink) {
         const canOpenDeepLink = await Linking.canOpenURL(app.deepLink);
         if (canOpenDeepLink) {
@@ -279,7 +286,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
         }
       }
 
-      // Fallback to web URL
+      // Fallback to web URL for mobile
       if (app.webUrl) {
         const canOpenWeb = await Linking.canOpenURL(app.webUrl);
         if (canOpenWeb) {
@@ -414,16 +421,15 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
       </View>
 
       {/* Apps Grid */}
-      <FlatList
-        data={apps}
-        renderItem={renderAppItem}
-        keyExtractor={(item) => item.name}
-        numColumns={numColumns}
-        contentContainerStyle={styles.gridContainer}
-        showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        columnWrapperStyle={numColumns > 1 ? styles.row : undefined}
-      />
+      <View style={styles.gridContainer}>
+        <View style={styles.appsGrid}>
+          {apps.map((item, index) => (
+            <View key={item.name} style={styles.appItemWrapper}>
+              {renderAppItem({ item, index })}
+            </View>
+          ))}
+        </View>
+      </View>
 
       {/* Low Balance Warning */}
       {balance < minTokensRequired && (
@@ -502,11 +508,16 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderWidth: 2,
     borderColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
+    // Use boxShadow for web compatibility
+    ...(Platform.OS === 'web' ? {
+      boxShadow: `0 0 5px ${colors.primary}30`,
+    } : {
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.3,
+      shadowRadius: 5,
+      elevation: 5,
+    }),
   } as ViewStyle,
 
   appItemDisabled: {
@@ -592,6 +603,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 4,
   } as TextStyle,
+
+  appsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  } as ViewStyle,
+
+  appItemWrapper: {
+    width: `${100 / 2 - 2}%`, // 2 columns with spacing
+    marginBottom: 16,
+  } as ViewStyle,
 
   warningSubtext: {
     fontSize: 14,

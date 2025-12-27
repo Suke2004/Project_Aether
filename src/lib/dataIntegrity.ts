@@ -200,7 +200,10 @@ export class DataIntegrityService {
     for (const error of criticalErrors) {
       const result = await DataCorruptionHandler.handleDataCorruption(
         error,
-        this.restoreFromBackup,
+        async () => {
+          const backupResult = await DataIntegrityService.restoreFromBackup();
+          return backupResult !== null;
+        },
         notifyParent
       );
       
@@ -506,8 +509,9 @@ export const useDataIntegrity = () => {
     return await DataIntegrityService.createBackup(profile, transactions, reason);
   };
 
-  const restoreFromBackup = async () => {
-    return await DataIntegrityService.restoreFromBackup();
+  const restoreFromBackup = async (): Promise<boolean> => {
+    const result = await DataIntegrityService.restoreFromBackup();
+    return result !== null;
   };
 
   const handleCorruption = async (errors: DataCorruptionError[], notifyParent?: (message: string) => Promise<void>) => {

@@ -1,15 +1,14 @@
 /**
  * WalletCard Component
- * Cyberpunk-styled balance display with animations and visual feedback
+ * Simple balance display without animations
  * Requirements: 5.1, 5.4
  */
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Animated,
   Dimensions,
   ViewStyle,
   TextStyle,
@@ -19,7 +18,7 @@ import { useWallet } from '../context/WalletContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-// Color scheme for cyberpunk theme
+// Simple color scheme
 const colors = {
   primary: '#00ffff',      // Cyan
   secondary: '#ff00ff',    // Magenta
@@ -41,110 +40,30 @@ interface WalletCardProps {
 export const WalletCard: React.FC<WalletCardProps> = ({
   style,
   showDetails = true,
-  lowBalanceThreshold = 25, // 5 minutes worth of tokens
+  lowBalanceThreshold = 25,
 }) => {
   const { balance, totalEarned, totalSpent, isLoading, offlineStatus } = useWallet();
-  
-  // Animation values
-  const balanceAnimation = useRef(new Animated.Value(0)).current;
-  const glowAnimation = useRef(new Animated.Value(0)).current;
-  const pulseAnimation = useRef(new Animated.Value(1)).current;
-  const previousBalance = useRef(balance);
 
   // Determine if balance is low
   const isLowBalance = balance <= lowBalanceThreshold;
 
-  // Animate balance changes
-  useEffect(() => {
-    if (previousBalance.current !== balance) {
-      // Animate the balance number change
-      Animated.spring(balanceAnimation, {
-        toValue: balance,
-        useNativeDriver: false,
-        tension: 100,
-        friction: 8,
-      }).start();
-
-      // Trigger glow effect on balance change
-      Animated.sequence([
-        Animated.timing(glowAnimation, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowAnimation, {
-          toValue: 0,
-          duration: 700,
-          useNativeDriver: false,
-        }),
-      ]).start();
-
-      previousBalance.current = balance;
-    }
-  }, [balance, balanceAnimation, glowAnimation]);
-
-  // Low balance pulse animation
-  useEffect(() => {
-    if (isLowBalance) {
-      const pulseLoop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnimation, {
-            toValue: 1.1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnimation, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-      pulseLoop.start();
-      return () => pulseLoop.stop();
-    } else {
-      pulseAnimation.setValue(1);
-    }
-  }, [isLowBalance, pulseAnimation]);
-
   // Calculate minutes remaining
   const minutesRemaining = Math.floor(balance / 5);
 
-  // Animated balance value for smooth number transitions
-  const animatedBalance = balanceAnimation.interpolate({
-    inputRange: [0, Math.max(balance, 1)],
-    outputRange: [0, balance],
-    extrapolate: 'clamp',
-  });
-
-  // Glow intensity based on animation
-  const glowIntensity = glowAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 10],
-    extrapolate: 'clamp',
-  });
-
   return (
-    <Animated.View
+    <View
       style={[
         styles.container,
         style,
-        {
-          transform: [{ scale: pulseAnimation }],
-          shadowRadius: glowIntensity,
-        },
         isLowBalance && styles.lowBalanceContainer,
       ]}
     >
-      {/* Background gradient effect */}
-      <View style={[styles.backgroundGradient, isLowBalance && styles.lowBalanceGradient]} />
-      
       {/* Main balance display */}
       <View style={styles.balanceSection}>
         <Text style={styles.balanceLabel}>TOKENS</Text>
-        <Animated.Text style={[styles.balanceValue, isLowBalance && styles.lowBalanceText]}>
-          {animatedBalance.__getValue ? Math.round(animatedBalance.__getValue()) : balance}
-        </Animated.Text>
+        <Text style={[styles.balanceValue, isLowBalance && styles.lowBalanceText]}>
+          {balance}
+        </Text>
         <Text style={[styles.minutesText, isLowBalance && styles.lowBalanceText]}>
           {minutesRemaining} {minutesRemaining === 1 ? 'minute' : 'minutes'} remaining
         </Text>
@@ -200,13 +119,7 @@ export const WalletCard: React.FC<WalletCardProps> = ({
           </Text>
         </View>
       )}
-
-      {/* Cyberpunk border effects */}
-      <View style={styles.borderTop} />
-      <View style={styles.borderBottom} />
-      <View style={styles.borderLeft} />
-      <View style={styles.borderRight} />
-    </Animated.View>
+    </View>
   );
 };
 
@@ -217,41 +130,12 @@ const styles = StyleSheet.create({
     padding: 20,
     marginHorizontal: 16,
     marginVertical: 8,
-    position: 'relative',
-    overflow: 'hidden',
-    // Use boxShadow for web compatibility
-    ...(Platform.OS === 'web' ? {
-      boxShadow: `0 0 5px ${colors.primary}30`,
-    } : {
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.3,
-      shadowRadius: 5,
-      elevation: 8,
-    }),
+    borderWidth: 1,
+    borderColor: colors.primary,
   } as ViewStyle,
 
   lowBalanceContainer: {
-    ...(Platform.OS === 'web' ? {
-      boxShadow: `0 0 5px ${colors.lowBalance}30`,
-    } : {
-      shadowColor: colors.lowBalance,
-    }),
     borderColor: colors.lowBalance,
-    borderWidth: 1,
-  } as ViewStyle,
-
-  backgroundGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.cardBg,
-    opacity: 0.8,
-  } as ViewStyle,
-
-  lowBalanceGradient: {
     backgroundColor: '#2a0a0a',
   } as ViewStyle,
 
@@ -272,24 +156,11 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: 'bold',
     color: colors.primary,
-    // Use textShadow for web compatibility
-    ...(Platform.OS === 'web' ? {
-      textShadow: `0 0 10px ${colors.primary}`,
-    } : {
-      textShadowColor: colors.primary,
-      textShadowOffset: { width: 0, height: 0 },
-      textShadowRadius: 10,
-    }),
     marginBottom: 4,
   } as TextStyle,
 
   lowBalanceText: {
     color: colors.lowBalance,
-    ...(Platform.OS === 'web' ? {
-      textShadow: `0 0 10px ${colors.lowBalance}`,
-    } : {
-      textShadowColor: colors.lowBalance,
-    }),
   } as TextStyle,
 
   minutesText: {
@@ -386,47 +257,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: 'center',
   } as TextStyle,
-
-  // Cyberpunk border effects
-  borderTop: {
-    position: 'absolute',
-    top: 0,
-    left: 20,
-    right: 20,
-    height: 2,
-    backgroundColor: colors.primary,
-    opacity: 0.6,
-  } as ViewStyle,
-
-  borderBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 20,
-    right: 20,
-    height: 2,
-    backgroundColor: colors.primary,
-    opacity: 0.6,
-  } as ViewStyle,
-
-  borderLeft: {
-    position: 'absolute',
-    left: 0,
-    top: 20,
-    bottom: 20,
-    width: 2,
-    backgroundColor: colors.secondary,
-    opacity: 0.6,
-  } as ViewStyle,
-
-  borderRight: {
-    position: 'absolute',
-    right: 0,
-    top: 20,
-    bottom: 20,
-    width: 2,
-    backgroundColor: colors.secondary,
-    opacity: 0.6,
-  } as ViewStyle,
 });
 
 export default WalletCard;

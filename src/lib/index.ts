@@ -15,6 +15,9 @@ export * from './utils';
 // Export web utilities
 export * from './webUtils';
 
+// Export Android utilities
+export * from './androidUtils';
+
 // Export Supabase client and helpers
 export * from './supabase';
 

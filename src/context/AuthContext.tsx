@@ -32,28 +32,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Initialize authentication state on component mount
    */
   useEffect(() => {
+    const isDevelopment = process.env.NODE_ENV === 'development' || __DEV__;
+    console.log('AuthContext useEffect starting, isDevelopment:', isDevelopment);
+    
     initializeAuth();
     
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
-        
-        if (session?.user) {
-          await handleUserSession(session.user, session);
-        } else {
-          // User signed out or session expired
-          setUser(null);
-          setProfile(null);
-          setSession(null);
+    // Only set up auth state change listener in production mode
+    let subscription: any = null;
+    let loadingTimeout: NodeJS.Timeout;
+    
+    if (!isDevelopment) {
+      console.log('Setting up production auth listener');
+      // Set up auth state change listener for production
+      const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          console.log('Auth state changed:', event, session?.user?.id);
+          
+          if (session?.user) {
+            await handleUserSession(session.user, session);
+          } else {
+            // User signed out or session expired
+            setUser(null);
+            setProfile(null);
+            setSession(null);
+          }
+          
+          setIsLoading(false);
         }
-        
+      );
+      subscription = authSubscription;
+      
+      // Fallback timeout for production mode
+      loadingTimeout = setTimeout(() => {
+        console.warn('Auth initialization timeout, forcing loading to false');
         setIsLoading(false);
-      }
-    );
+      }, 10000); // 10 second timeout
+    } else {
+      console.log('Development mode: setting up short timeout');
+      // In development mode, set a shorter timeout since we use mock data
+      loadingTimeout = setTimeout(() => {
+        console.log('Development mode: ensuring loading state is cleared');
+        setIsLoading(false);
+      }, 2000); // 2 second timeout for dev mode
+    }
 
     return () => {
-      subscription.unsubscribe();
+      console.log('AuthContext cleanup');
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+      clearTimeout(loadingTimeout);
     };
   }, []);
 
@@ -61,37 +89,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Initialize authentication state from existing session
    */
   const initializeAuth = async () => {
+    console.log('initializeAuth starting');
+    
+    // Development mode: Create a mock user for testing
+    const isDevelopment = process.env.NODE_ENV === 'development' || __DEV__;
+    
+    if (isDevelopment) {
+      console.log('Running in development mode - creating mock user');
+      
+      // Create a mock user and profile for development
+      const mockUser = {
+        id: '00000000-0000-0000-0000-000000000123',
+        email: 'dev@example.com',
+        user_metadata: { role: 'child' },
+        app_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+      } as User;
+      
+      const mockProfile: Profile = {
+        id: '00000000-0000-0000-0000-000000000123',
+        role: 'child',
+        balance: 50,
+        total_earned: 100,
+        total_spent: 50,
+      };
+      
+      console.log('Setting mock user and profile in development mode');
+      setUser(mockUser);
+      setProfile(mockProfile);
+      console.log('Development mode initialization complete, setting loading to false');
+      setIsLoading(false);
+      return;
+    }
+
+    // Production mode: Get current session
     try {
       setIsLoading(true);
-      
-      // Development mode: Create a mock user for testing
-      const isDevelopment = process.env.NODE_ENV === 'development' || __DEV__;
-      
-      if (isDevelopment) {
-        console.log('Running in development mode - creating mock user');
-        
-        // Create a mock user and profile for development
-        const mockUser = {
-          id: 'dev-user-123',
-          email: 'dev@example.com',
-          user_metadata: { role: 'child' }
-        } as User;
-        
-        const mockProfile: Profile = {
-          id: 'dev-user-123',
-          role: 'child',
-          balance: 50,
-          total_earned: 100,
-          total_spent: 50,
-        };
-        
-        setUser(mockUser);
-        setProfile(mockProfile);
-        setIsLoading(false);
-        return;
-      }
-      
-      // Production mode: Get current session
       const currentSession = await authHelpers.getSession();
       
       if (currentSession?.user) {
@@ -103,13 +137,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Fallback to development mode if auth fails
       console.log('Auth failed, falling back to development mode');
       const mockUser = {
-        id: 'dev-user-123',
+        id: '00000000-0000-0000-0000-000000000123',
         email: 'dev@example.com',
-        user_metadata: { role: 'child' }
+        user_metadata: { role: 'child' },
+        app_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
       } as User;
       
       const mockProfile: Profile = {
-        id: 'dev-user-123',
+        id: '00000000-0000-0000-0000-000000000123',
         role: 'child',
         balance: 50,
         total_earned: 100,

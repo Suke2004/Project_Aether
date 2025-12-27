@@ -16,8 +16,8 @@ describe('App Loading Tests', () => {
     it('should not get stuck in loading state', async () => {
       // Test that the app can initialize without hanging
       const mockAuthContext = {
-        user: { id: 'dev-user-123', email: 'dev@example.com' },
-        profile: { id: 'dev-user-123', role: 'child', balance: 50, total_earned: 100, total_spent: 50 },
+        user: { id: '00000000-0000-0000-0000-000000000123', email: 'dev@example.com' },
+        profile: { id: '00000000-0000-0000-0000-000000000123', role: 'child', balance: 50, total_earned: 100, total_spent: 50 },
         isLoading: false,
         signIn: jest.fn(),
         signUp: jest.fn(),
@@ -48,20 +48,20 @@ describe('App Loading Tests', () => {
       
       if (isDevelopment) {
         const mockUser = {
-          id: 'dev-user-123',
+          id: '00000000-0000-0000-0000-000000000123',
           email: 'dev@example.com',
           user_metadata: { role: 'child' }
         };
         
         const mockProfile = {
-          id: 'dev-user-123',
+          id: '00000000-0000-0000-0000-000000000123',
           role: 'child',
           balance: 50,
           total_earned: 100,
           total_spent: 50,
         };
         
-        expect(mockUser.id).toBe('dev-user-123');
+        expect(mockUser.id).toBe('00000000-0000-0000-0000-000000000123');
         expect(mockProfile.role).toBe('child');
         expect(mockProfile.balance).toBe(50);
       }
@@ -70,7 +70,7 @@ describe('App Loading Tests', () => {
     it('should handle wallet initialization in development mode', () => {
       // Test wallet development mode
       const profile = {
-        id: 'dev-user-123',
+        id: '00000000-0000-0000-0000-000000000123',
         role: 'child' as const,
         balance: 50,
         total_earned: 100,
@@ -79,7 +79,7 @@ describe('App Loading Tests', () => {
 
       const isDevelopment = true;
       
-      if (isDevelopment && profile.id === 'dev-user-123') {
+      if (isDevelopment && profile.id === '00000000-0000-0000-0000-000000000123') {
         // Mock transactions that would be created in development mode
         const mockTransactions = [
           {
@@ -112,13 +112,13 @@ describe('App Loading Tests', () => {
       
       // Simulate fallback behavior
       const fallbackUser = {
-        id: 'dev-user-123',
+        id: '00000000-0000-0000-0000-000000000123',
         email: 'dev@example.com',
         user_metadata: { role: 'child' }
       };
       
       const fallbackProfile = {
-        id: 'dev-user-123',
+        id: '00000000-0000-0000-0000-000000000123',
         role: 'child' as const,
         balance: 50,
         total_earned: 100,
@@ -126,7 +126,7 @@ describe('App Loading Tests', () => {
       };
       
       expect(authError).toBeInstanceOf(Error);
-      expect(fallbackUser.id).toBe('dev-user-123');
+      expect(fallbackUser.id).toBe('00000000-0000-0000-0000-000000000123');
       expect(fallbackProfile.role).toBe('child');
     });
 
@@ -135,7 +135,7 @@ describe('App Loading Tests', () => {
       const dbError = new Error('Database connection failed');
       
       const profile = {
-        id: 'dev-user-123',
+        id: '00000000-0000-0000-0000-000000000123',
         role: 'child' as const,
         balance: 50,
         total_earned: 100,

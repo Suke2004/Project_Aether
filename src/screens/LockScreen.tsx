@@ -14,10 +14,10 @@ import {
   ViewStyle,
   TextStyle,
   Animated,
-  SafeAreaView,
   StatusBar,
   BackHandler,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
 import { QuestType } from '../lib/types';

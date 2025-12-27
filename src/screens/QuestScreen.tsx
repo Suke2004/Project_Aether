@@ -1,10 +1,4 @@
-/**
- * QuestScreen Component
- * Quest selection and completion interface with AI verification
- * Requirements: 1.1, 1.2, 1.3
- */
-
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -15,11 +9,11 @@ import {
   Dimensions,
   ViewStyle,
   TextStyle,
-  Animated,
-  SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
 import { QuestCam } from '../components/QuestCam';
@@ -58,56 +52,73 @@ export const QuestScreen: React.FC<QuestScreenProps> = ({
   const [selectedQuest, setSelectedQuest] = useState<QuestType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showCamera, setShowCamera] = useState(false);
-  
-  // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const headerGlowAnim = useRef(new Animated.Value(0)).current;
 
   // Load quest types on mount
   useEffect(() => {
     loadQuestTypes();
   }, []);
 
-  // Animate component entrance
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Start header glow animation
-    const glowLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(headerGlowAnim, {
-          toValue: 1,
-          duration: 3000,
-          useNativeDriver: false,
-        }),
-        Animated.timing(headerGlowAnim, {
-          toValue: 0,
-          duration: 3000,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-    glowLoop.start();
-
-    return () => glowLoop.stop();
-  }, []);
-
   const loadQuestTypes = async () => {
     try {
       setIsLoading(true);
-      const activeQuests = await dbHelpers.getActiveQuestTypes();
+      
+      // Try to load from database first
+      let activeQuests: QuestType[] = [];
+      try {
+        activeQuests = await dbHelpers.getActiveQuestTypes();
+      } catch (dbError) {
+        console.warn('Database quest loading failed, using fallback quests:', dbError);
+        
+        // Fallback quest data for testing/demo
+        activeQuests = [
+          {
+            id: 'demo-1',
+            name: 'Clean Your Room',
+            description: 'Organize your bedroom, make your bed, and put away all clothes and toys.',
+            token_reward: 15,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            id: 'demo-2',
+            name: 'Read for 20 Minutes',
+            description: 'Read a book, magazine, or educational article for at least 20 minutes.',
+            token_reward: 10,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            id: 'demo-3',
+            name: 'Help with Dishes',
+            description: 'Help wash, dry, or put away dishes after a meal.',
+            token_reward: 8,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            id: 'demo-4',
+            name: 'Exercise for 15 Minutes',
+            description: 'Do jumping jacks, push-ups, go for a walk, or any physical activity.',
+            token_reward: 12,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            id: 'demo-5',
+            name: 'Practice Math Problems',
+            description: 'Complete 10 math problems or practice math skills for 15 minutes.',
+            token_reward: 20,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ];
+      }
+      
       setQuestTypes(activeQuests);
       console.log('Loaded quest types:', activeQuests.length);
     } catch (error) {
@@ -213,13 +224,6 @@ export const QuestScreen: React.FC<QuestScreenProps> = ({
     );
   };
 
-  // Animated glow intensity
-  const glowIntensity = headerGlowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [5, 15],
-    extrapolate: 'clamp',
-  });
-
   // If camera is active, show QuestCam component
   if (showCamera && selectedQuest) {
     return (
@@ -235,29 +239,10 @@ export const QuestScreen: React.FC<QuestScreenProps> = ({
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       
-      <Animated.View
-        style={[
-          styles.content,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          },
-        ]}
-      >
+      <View style={styles.content}>
         {/* Header Section */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              shadowRadius: glowIntensity,
-            },
-          ]}
-        >
+        <View style={styles.header}>
           <View style={styles.headerContent}>
-            <TouchableOpacity style={styles.backButton} onPress={onBack}>
-              <Text style={styles.backButtonIcon}>←</Text>
-              <Text style={styles.backButtonText}>Back</Text>
-            </TouchableOpacity>
             
             <View style={styles.titleSection}>
               <Text style={styles.title}>Available Quests</Text>
@@ -273,53 +258,174 @@ export const QuestScreen: React.FC<QuestScreenProps> = ({
           {/* Cyberpunk border effects */}
           <View style={styles.headerBorderTop} />
           <View style={styles.headerBorderBottom} />
-        </Animated.View>
+        </View>
 
-        {/* Quest List */}
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Loading quests...</Text>
-          </View>
-        ) : questTypes.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>No Quests Available</Text>
-            <Text style={styles.emptyText}>
-              Check back later for new quests to complete!
-            </Text>
-            <TouchableOpacity style={styles.refreshButton} onPress={loadQuestTypes}>
-              <Text style={styles.refreshButtonText}>Refresh</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Quest List - Platform-specific scrolling */}
+        {Platform.OS === 'web' ? (
+          <div style={{
+            position: 'absolute',
+            top: '120px', // Below header
+            left: '0',
+            right: '0',
+            bottom: '0', // Full height to bottom
+            overflowY: 'scroll',
+            overflowX: 'hidden',
+            backgroundColor: '#0a0a0a',
+            padding: '16px',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'auto',
+            scrollbarColor: '#00ffff #333',
+          }}>
+            {isLoading ? (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '40px',
+              }}>
+                <Text style={styles.loadingText}>Loading quests...</Text>
+              </div>
+            ) : questTypes.length === 0 ? (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '40px',
+              }}>
+                <Text style={styles.emptyTitle}>No Quests Available</Text>
+                <Text style={styles.emptyText}>
+                  Check back later for new quests to complete!
+                </Text>
+                <TouchableOpacity style={styles.refreshButton} onPress={loadQuestTypes}>
+                  <Text style={styles.refreshButtonText}>Refresh</Text>
+                </TouchableOpacity>
+              </div>
+            ) : (
+              <div>
+                {questTypes.map((quest, index) => (
+                  <div key={quest.id} style={{ marginBottom: index < questTypes.length - 1 ? '16px' : '0' }}>
+                    <TouchableOpacity
+                      style={styles.questItem}
+                      onPress={() => handleQuestSelect(quest)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.questHeader}>
+                        <Text style={styles.questName}>{quest.name}</Text>
+                        <View style={styles.rewardBadge}>
+                          <Text style={styles.rewardText}>{quest.token_reward}</Text>
+                          <Text style={styles.rewardLabel}>tokens</Text>
+                        </View>
+                      </View>
+                      
+                      <Text style={styles.questDescription}>{quest.description}</Text>
+                      
+                      <View style={styles.questFooter}>
+                        <Text style={styles.questDifficulty}>
+                          Difficulty: {quest.token_reward <= 10 ? 'Easy' : quest.token_reward <= 25 ? 'Medium' : 'Hard'}
+                        </Text>
+                        <Text style={styles.questTime}>
+                          ~{Math.ceil(quest.token_reward / 5)} min reward
+                        </Text>
+                      </View>
+
+                      {/* Cyberpunk border effects */}
+                      <View style={styles.questBorderTop} />
+                      <View style={styles.questBorderBottom} />
+                    </TouchableOpacity>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Instructions - Inside scrollable area for web */}
+            <div style={{
+              backgroundColor: '#1a1a2e',
+              margin: '16px 0',
+              padding: '16px',
+              borderRadius: '8px',
+              border: '1px solid #b0b0b0',
+            }}>
+              <Text style={styles.instructionsTitle}>How it works:</Text>
+              <Text style={styles.instructionsText}>
+                1. Choose a quest from the list above{'\n'}
+                2. Complete the task in real life{'\n'}
+                3. Take a photo to prove completion{'\n'}
+                4. AI will verify and award tokens!
+              </Text>
+            </div>
+
+            {/* Footer - Inside scrollable area for web */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '12px 0',
+              backgroundColor: '#1a1a2e',
+              borderTop: '1px solid #00ffff',
+              marginTop: '16px',
+            }}>
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#00ffff', opacity: 0.3 }}></div>
+              <Text style={styles.footerText}>QUEST SYSTEM v1.0</Text>
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#00ffff', opacity: 0.3 }}></div>
+            </div>
+
+            {/* Extra bottom spacing */}
+            <div style={{ height: '20px' }}></div>
+          </div>
         ) : (
-          <FlatList
-            data={questTypes}
-            renderItem={renderQuestItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.questList}
-            showsVerticalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={styles.questSeparator} />}
-          />
+          <>
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={styles.loadingText}>Loading quests...</Text>
+              </View>
+            ) : questTypes.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyTitle}>No Quests Available</Text>
+                <Text style={styles.emptyText}>
+                  Check back later for new quests to complete!
+                </Text>
+                <TouchableOpacity style={styles.refreshButton} onPress={loadQuestTypes}>
+                  <Text style={styles.refreshButtonText}>Refresh</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <FlatList
+                data={questTypes}
+                renderItem={renderQuestItem}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.questList}
+                showsVerticalScrollIndicator={false}
+                ItemSeparatorComponent={() => <View style={styles.questSeparator} />}
+                style={styles.questFlatList}
+                nestedScrollEnabled={true}
+                keyboardShouldPersistTaps="handled"
+              />
+            )}
+
+            {/* Instructions - Outside scrollable area for mobile */}
+            <View style={styles.instructionsContainer}>
+              <Text style={styles.instructionsTitle}>How it works:</Text>
+              <Text style={styles.instructionsText}>
+                1. Choose a quest from the list above{'\n'}
+                2. Complete the task in real life{'\n'}
+                3. Take a photo to prove completion{'\n'}
+                4. AI will verify and award tokens!
+              </Text>
+            </View>
+
+            {/* Footer - Outside scrollable area for mobile */}
+            <View style={styles.footer}>
+              <View style={styles.footerLine} />
+              <Text style={styles.footerText}>QUEST SYSTEM v1.0</Text>
+              <View style={styles.footerLine} />
+            </View>
+          </>
         )}
-
-        {/* Instructions */}
-        <View style={styles.instructionsContainer}>
-          <Text style={styles.instructionsTitle}>How it works:</Text>
-          <Text style={styles.instructionsText}>
-            1. Choose a quest from the list above{'\n'}
-            2. Complete the task in real life{'\n'}
-            3. Take a photo to prove completion{'\n'}
-            4. AI will verify and award tokens!
-          </Text>
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View style={styles.footerLine} />
-          <Text style={styles.footerText}>QUEST SYSTEM v1.0</Text>
-          <View style={styles.footerLine} />
-        </View>
-      </Animated.View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -429,6 +535,11 @@ const styles = StyleSheet.create({
 
   questList: {
     padding: 16,
+    flexGrow: 1,
+  } as ViewStyle,
+
+  questFlatList: {
+    flex: 1,
   } as ViewStyle,
 
   questItem: {

@@ -1,0 +1,62 @@
+/* Web-specific styles for React Native Web */
+
+/* Ensure proper scrolling on web */
+html, body, #root {
+  height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fix scrolling for React Native ScrollView on web */
+div[data-focusable="true"] {
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure FlatList scrolls properly on web */
+div[role="list"] {
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch;
+  max-height: 100vh;
+}
+
+/* Fix for nested scrolling */
+.rn-scrollview {
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure proper height for containers */
+.rn-view {
+  min-height: auto;
+}
+
+/* Fix for SafeAreaView on web */
+.rn-safearea {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Cyberpunk scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00ffff;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00cccc;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #00ffff #0a0a0a;
+}

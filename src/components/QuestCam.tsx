@@ -16,9 +16,12 @@ import {
   Dimensions,
   ViewStyle,
   TextStyle,
+  ImageStyle,
   Animated,
+  Platform,
+  Linking,
 } from 'react-native';
-import { Camera, CameraType } from 'expo-camera';
+import { Camera, CameraView } from 'expo-camera';
 // import * as ImagePicker from 'expo-image-picker';
 import { verifyQuestWithRetry } from '../lib/gemini';
 import { useWallet } from '../context/WalletContext';
@@ -60,7 +63,7 @@ export const QuestCam: React.FC<QuestCamProps> = ({
   
   // Camera and image states
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [cameraType, setCameraType] = useState(CameraType.back);
+  const [cameraType, setCameraType] = useState<'front' | 'back'>('back');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [verificationResult, setVerificationResult] = useState<AIVerificationResult | null>(null);
@@ -71,7 +74,7 @@ export const QuestCam: React.FC<QuestCamProps> = ({
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   
-  const cameraRef = useRef<Camera>(null);
+  const cameraRef = useRef<CameraView>(null);
 
   // Request camera permissions on mount
   useEffect(() => {
@@ -130,13 +133,25 @@ export const QuestCam: React.FC<QuestCamProps> = ({
           'This app needs camera access to verify quest completion. Please enable camera permissions in your device settings.',
           [
             { text: 'Cancel', onPress: onCancel },
-            { text: 'Settings', onPress: () => {/* Open settings if possible */} },
+            { 
+              text: 'Open Settings', 
+              onPress: () => {
+                if (Platform.OS === 'android') {
+                  Linking.openSettings();
+                }
+              }
+            },
           ]
         );
       }
     } catch (error) {
       console.error('Error requesting camera permission:', error);
       setHasPermission(false);
+      Alert.alert(
+        'Permission Error',
+        'Unable to request camera permission. Please check your device settings.',
+        [{ text: 'OK', onPress: onCancel }]
+      );
     }
   };
 
@@ -378,8 +393,8 @@ export const QuestCam: React.FC<QuestCamProps> = ({
   };
 
   const flipCamera = () => {
-    setCameraType(current => 
-      current === CameraType.back ? CameraType.front : CameraType.back
+    setCameraType((current: 'front' | 'back') => 
+      current === 'back' ? 'front' : 'back'
     );
   };
 
@@ -464,11 +479,10 @@ export const QuestCam: React.FC<QuestCamProps> = ({
             )}
           </View>
         ) : (
-          <Camera
+          <CameraView
             ref={cameraRef}
             style={styles.camera}
-            type={cameraType}
-            ratio="4:3"
+            facing={cameraType}
           >
             <View style={styles.cameraOverlay}>
               {/* Viewfinder frame */}
@@ -486,7 +500,7 @@ export const QuestCam: React.FC<QuestCamProps> = ({
                 </Text>
               </View>
             </View>
-          </Camera>
+          </CameraView>
         )}
       </View>
 
@@ -661,7 +675,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     resizeMode: 'cover',
-  } as ViewStyle,
+  } as ImageStyle,
 
   resultOverlay: {
     position: 'absolute',

@@ -88,7 +88,7 @@ describe('App Integration Tests', () => {
       const restrictedScreens = ['ParentDashboard'];
       
       restrictedScreens.forEach(screen => {
-        const hasAccess = userRole === 'parent';
+        const hasAccess = (userRole as string) === 'parent';
         expect(hasAccess).toBe(false);
       });
     });
@@ -297,7 +297,7 @@ describe('App Integration Tests', () => {
     it('should validate user permissions', () => {
       const userRole: 'child' | 'parent' = 'child';
       const requiredRole: 'child' | 'parent' = 'parent';
-      const hasPermission = userRole === requiredRole;
+      const hasPermission = (userRole as string) === (requiredRole as string);
       
       expect(hasPermission).toBe(false);
     });

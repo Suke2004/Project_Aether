@@ -71,7 +71,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       // Development mode: Use mock data
       const isDevelopment = process.env.NODE_ENV === 'development' || __DEV__;
       
-      if (isDevelopment && profile.id === 'dev-user-123') {
+      if (isDevelopment && profile.id === '00000000-0000-0000-0000-000000000123') {
         console.log('Running wallet in development mode');
         
         // Set balance and totals from profile
@@ -229,7 +229,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
     // Skip real-time subscriptions in development mode with mock data
     const isDevelopment = process.env.NODE_ENV === 'development' || __DEV__;
-    if (isDevelopment && profile.id === 'dev-user-123') {
+    if (isDevelopment && profile.id === '00000000-0000-0000-0000-000000000123') {
       console.log('🔧 Skipping real-time subscriptions in development mode');
       return;
     }
@@ -306,6 +306,36 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
     try {
       setIsLoading(true);
+
+      // Development mode: Handle transactions locally without database
+      const isDevelopment = process.env.NODE_ENV === 'development' || __DEV__;
+      
+      if (isDevelopment && profile.id === '00000000-0000-0000-0000-000000000123') {
+        console.log('Development mode: Processing earn transaction locally');
+        
+        // Update local state only
+        const newBalance = balance + amount;
+        const newTotalEarned = totalEarned + amount;
+        
+        setBalance(newBalance);
+        setTotalEarned(newTotalEarned);
+
+        // Create a mock transaction for local display
+        const mockTransaction: Transaction = {
+          id: `dev_earn_${Date.now()}`,
+          user_id: profile.id,
+          amount,
+          type: 'earn',
+          description: description.trim(),
+          proof_image_url: proofUrl,
+          timestamp: new Date().toISOString(),
+        };
+        
+        setTransactions(prev => [mockTransaction, ...prev]);
+
+        console.log(`Development mode: Earned ${amount} tokens. New balance: ${newBalance}`);
+        return;
+      }
 
       // Check if device is online
       if (offlineQueue.status.isOnline) {
@@ -407,6 +437,36 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
 
+      // Development mode: Handle transactions locally without database
+      const isDevelopment = process.env.NODE_ENV === 'development' || __DEV__;
+      
+      if (isDevelopment && profile.id === '00000000-0000-0000-0000-000000000123') {
+        console.log('Development mode: Processing spend transaction locally');
+        
+        // Update local state only
+        const newBalance = balance - amount;
+        const newTotalSpent = totalSpent + amount;
+        
+        setBalance(newBalance);
+        setTotalSpent(newTotalSpent);
+
+        // Create a mock transaction for local display
+        const mockTransaction: Transaction = {
+          id: `dev_spend_${Date.now()}`,
+          user_id: profile.id,
+          amount,
+          type: 'spend',
+          description: description.trim(),
+          app_name: appName,
+          timestamp: new Date().toISOString(),
+        };
+        
+        setTransactions(prev => [mockTransaction, ...prev]);
+
+        console.log(`Development mode: Spent ${amount} tokens. New balance: ${newBalance}`);
+        return;
+      }
+
       // Check if device is online
       if (offlineQueue.status.isOnline) {
         // Online: Process transaction immediately
@@ -505,6 +565,35 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       // Refunds are processed as earning transactions with a special description
       const refundDescription = `REFUND: ${description.trim()}`;
+
+      // Development mode: Handle transactions locally without database
+      const isDevelopment = process.env.NODE_ENV === 'development' || __DEV__;
+      
+      if (isDevelopment && profile.id === '00000000-0000-0000-0000-000000000123') {
+        console.log('Development mode: Processing refund transaction locally');
+        
+        // Update local state only
+        const newBalance = balance + amount;
+        const newTotalEarned = totalEarned + amount;
+        
+        setBalance(newBalance);
+        setTotalEarned(newTotalEarned);
+
+        // Create a mock transaction for local display
+        const mockTransaction: Transaction = {
+          id: `dev_refund_${Date.now()}`,
+          user_id: profile.id,
+          amount,
+          type: 'earn', // Refunds are processed as earnings
+          description: refundDescription,
+          timestamp: new Date().toISOString(),
+        };
+        
+        setTransactions(prev => [mockTransaction, ...prev]);
+
+        console.log(`Development mode: Refunded ${amount} tokens. New balance: ${newBalance}`);
+        return;
+      }
 
       // Check if device is online
       if (offlineQueue.status.isOnline) {

@@ -1,12 +1,20 @@
-/**
- * Environment configuration for the Attention Wallet system
- * Handles API keys and configuration settings
- */
-
-// Supabase configuration
+// Supabase configuration (for backward compatibility)
 export const SUPABASE_CONFIG = {
   url: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
   anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+};
+
+// Neon PostgreSQL configuration
+export const NEON_CONFIG = {
+  connectionString: process.env.EXPO_PUBLIC_NEON_DATABASE_URL || '',
+  // For serverless functions, you might want to use pooled connections
+  pooledConnectionString: process.env.EXPO_PUBLIC_NEON_POOLED_URL || '',
+};
+
+// JWT configuration for authentication
+export const JWT_CONFIG = {
+  secret: process.env.EXPO_PUBLIC_JWT_SECRET || 'your-jwt-secret-key',
+  expiresIn: '7d', // Token expiration time
 };
 
 // Google Gemini AI configuration
