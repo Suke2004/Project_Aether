@@ -9,6 +9,8 @@ import { getSupabaseClient, dbHelpers, realtimeHelpers } from '../lib/supabase';
 import { Transaction, WalletContextType, Profile } from '../lib/types';
 import { useAuth } from './AuthContext';
 import { useOfflineQueue } from '../hooks';
+import { DataIntegrityService, useDataIntegrity } from '../lib/dataIntegrity';
+import { Alert } from 'react-native';
 
 // Create the wallet context
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -25,11 +27,13 @@ interface WalletProviderProps {
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const { user, profile, refreshProfile } = useAuth();
   const offlineQueue = useOfflineQueue();
+  const { performIntegrityCheck, createBackup, handleCorruption } = useDataIntegrity();
   const [balance, setBalance] = useState<number>(0);
   const [totalEarned, setTotalEarned] = useState<number>(0);
   const [totalSpent, setTotalSpent] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [dataIntegrityChecked, setDataIntegrityChecked] = useState(false);
   
   // Real-time subscription channels
   const [profileSubscription, setProfileSubscription] = useState<RealtimeChannel | null>(null);
@@ -56,7 +60,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   }, [profile?.id]);
 
   /**
-   * Initialize wallet state from profile and load transactions
+   * Initialize wallet state from profile and load transactions with integrity check
    */
   const initializeWallet = async () => {
     if (!profile) return;
@@ -73,6 +77,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       const userTransactions = await dbHelpers.getTransactions(profile.id, 100);
       setTransactions(userTransactions);
 
+      // Perform data integrity check if not already done
+      if (!dataIntegrityChecked) {
+        await performDataIntegrityCheck(profile, userTransactions);
+        setDataIntegrityChecked(true);
+      }
+
       console.log('Wallet initialized for user:', profile.id, 'Balance:', profile.balance);
     } catch (error) {
       console.error('Failed to initialize wallet:', error);
@@ -82,8 +92,92 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   };
 
   /**
-   * Set up real-time subscriptions for profile and transaction updates
+   * Perform data integrity check and handle any corruption
    */
+  const performDataIntegrityCheck = async (currentProfile: Profile, currentTransactions: Transaction[]) => {
+    try {
+      console.log('Performing data integrity check...');
+      
+      const integrityResult = await performIntegrityCheck(currentProfile, currentTransactions);
+      
+      if (!integrityResult.isValid) {
+        console.warn('Data integrity issues detected:', {
+          errorCount: integrityResult.errors.length,
+          warningCount: integrityResult.warnings.length,
+          canRecover: integrityResult.canRecover,
+          backupAvailable: integrityResult.backupAvailable,
+        });
+
+        // Create a backup before attempting recovery
+        await createBackup(currentProfile, currentTransactions, 'Pre-recovery backup');
+
+        // Handle data corruption
+        const recoveryResult = await handleCorruption(
+          integrityResult.errors,
+          async (message: string) => {
+            // Notify parent about data recovery
+            console.log('Parent notification:', message);
+            // In a real app, this would send a notification to the parent
+            Alert.alert(
+              'Data Recovery',
+              'Some data issues were detected and automatically fixed. Your data has been restored from a backup.',
+              [{ text: 'OK' }]
+            );
+          }
+        );
+
+        if (recoveryResult.backupRestored) {
+          // Reload data from backup
+          const restoredData = await DataIntegrityService.restoreFromBackup();
+          if (restoredData) {
+            if (restoredData.profile) {
+              setBalance(restoredData.profile.balance);
+              setTotalEarned(restoredData.profile.total_earned);
+              setTotalSpent(restoredData.profile.total_spent);
+            }
+            setTransactions(restoredData.transactions);
+            
+            Alert.alert(
+              'Data Restored',
+              'Your data has been successfully restored from a backup due to corruption detection.',
+              [{ text: 'OK' }]
+            );
+          }
+        } else if (recoveryResult.recovered) {
+          Alert.alert(
+            'Data Fixed',
+            'Some data issues were detected and automatically fixed.',
+            [{ text: 'OK' }]
+          );
+        } else {
+          Alert.alert(
+            'Data Issues Detected',
+            'Some data issues were detected but could not be automatically fixed. Please contact support if you experience any problems.',
+            [{ text: 'OK' }]
+          );
+        }
+      } else {
+        console.log('Data integrity check passed');
+        
+        // Create a routine backup if none exists or if it's been a while
+        const backupInfo = await DataIntegrityService.getBackupInfo();
+        if (!backupInfo.hasBackup || 
+            (backupInfo.lastBackupTime && 
+             Date.now() - new Date(backupInfo.lastBackupTime).getTime() > 24 * 60 * 60 * 1000)) {
+          await createBackup(currentProfile, currentTransactions, 'Routine backup');
+        }
+      }
+
+      // Display warnings if any
+      if (integrityResult.warnings.length > 0) {
+        console.warn('Data integrity warnings:', integrityResult.warnings);
+      }
+
+    } catch (error) {
+      console.error('Data integrity check failed:', error);
+      // Don't block the app if integrity check fails
+    }
+  };
   const setupRealtimeSubscriptions = () => {
     if (!profile?.id) return;
 
@@ -192,6 +286,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         // Refresh the auth profile to keep it in sync
         await refreshProfile();
 
+        // Create backup after significant transaction
+        if (amount >= 50) { // Backup for large transactions
+          await createBackup(updatedProfile, [createdTransaction, ...transactions], `Large earn transaction: ${amount} tokens`);
+        }
+
         console.log(`Earned ${amount} tokens for user ${profile.id}. New balance: ${updatedProfile.balance}`);
       } else {
         // Offline: Queue transaction for later sync
@@ -286,6 +385,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
         // Refresh the auth profile to keep it in sync
         await refreshProfile();
+
+        // Create backup after significant transaction
+        if (amount >= 50) { // Backup for large transactions
+          await createBackup(updatedProfile, [createdTransaction, ...transactions], `Large spend transaction: ${amount} tokens`);
+        }
 
         console.log(`Spent ${amount} tokens for user ${profile.id}. New balance: ${updatedProfile.balance}`);
       } else {
@@ -455,6 +559,31 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       };
     }
   }, [offlineQueue.isInitialized, offlineQueue.status.unsyncedCount, offlineQueue.status.queueLength, profile, refreshBalance]);
+
+  /**
+   * Cleanup effect: clean up old backups periodically
+   */
+  useEffect(() => {
+    if (profile) {
+      // Clean up old backups once per day
+      const cleanupInterval = setInterval(async () => {
+        try {
+          await DataIntegrityService.cleanupOldBackups();
+        } catch (error) {
+          console.error('Failed to cleanup old backups:', error);
+        }
+      }, 24 * 60 * 60 * 1000); // 24 hours
+
+      // Also run cleanup on mount
+      DataIntegrityService.cleanupOldBackups().catch(error => {
+        console.error('Failed to cleanup old backups on mount:', error);
+      });
+
+      return () => {
+        clearInterval(cleanupInterval);
+      };
+    }
+  }, [profile]);
 
   // Context value with all wallet functions and state
   const value: WalletContextType = {
