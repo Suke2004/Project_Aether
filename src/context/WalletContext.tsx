@@ -327,8 +327,89 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   };
 
   /**
-   * Refresh balance and transaction history from database
+   * Refund tokens (essentially earning tokens back due to failed operations)
+   * Requirements: 8.4
    */
+  const refundTokens = async (amount: number, description: string): Promise<void> => {
+    if (!user || !profile) {
+      throw new Error('User must be authenticated to refund tokens');
+    }
+
+    if (amount <= 0) {
+      throw new Error('Refund amount must be positive');
+    }
+
+    if (!description.trim()) {
+      throw new Error('Description is required for token refund');
+    }
+
+    try {
+      setIsLoading(true);
+
+      // Refunds are processed as earning transactions with a special description
+      const refundDescription = `REFUND: ${description.trim()}`;
+
+      // Check if device is online
+      if (offlineQueue.status.isOnline) {
+        // Online: Process refund immediately
+        const transaction: Omit<Transaction, 'id'> = {
+          user_id: profile.id,
+          amount,
+          type: 'earn', // Refunds are processed as earnings
+          description: refundDescription,
+          timestamp: new Date().toISOString(),
+        };
+
+        // Insert transaction into database
+        const createdTransaction = await dbHelpers.createTransaction(transaction);
+
+        // Update profile balance (add back the refunded amount)
+        // Note: We don't update total_earned for refunds as they're not "earned"
+        const newBalance = profile.balance + amount;
+
+        const updatedProfile = await dbHelpers.updateProfile(profile.id, {
+          balance: newBalance,
+        });
+
+        // Update local state immediately
+        setBalance(updatedProfile.balance);
+        setTransactions(prev => [createdTransaction, ...prev]);
+
+        // Refresh the auth profile to keep it in sync
+        await refreshProfile();
+
+        console.log(`Refunded ${amount} tokens for user ${profile.id}. New balance: ${updatedProfile.balance}`);
+      } else {
+        // Offline: Queue refund for later sync
+        console.log('Device is offline, queuing refund transaction');
+        
+        await offlineQueue.queueTransaction('earn', amount, refundDescription, {});
+
+        // Update local state optimistically
+        const newBalance = balance + amount;
+        setBalance(newBalance);
+
+        // Create a temporary transaction for local display
+        const tempTransaction: Transaction = {
+          id: `temp_refund_${Date.now()}`,
+          user_id: profile.id,
+          amount,
+          type: 'earn',
+          description: refundDescription,
+          timestamp: new Date().toISOString(),
+        };
+        
+        setTransactions(prev => [tempTransaction, ...prev]);
+
+        console.log(`Queued refund transaction for ${amount} tokens (offline mode)`);
+      }
+    } catch (error) {
+      console.error('Failed to refund tokens:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const refreshBalance = async (): Promise<void> => {
     if (!profile) {
       throw new Error('User must be authenticated to refresh balance');
@@ -384,6 +465,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     isLoading,
     earnTokens,
     spendTokens,
+    refundTokens,
     refreshBalance,
     offlineStatus: {
       queueLength: offlineQueue.status.queueLength,

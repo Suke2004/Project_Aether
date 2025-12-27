@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { useWallet } from '../context/WalletContext';
 import { AppConfig } from '../lib/types';
+import { AppLaunchErrorHandler, AppLaunchError } from '../lib/errorHandling';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -123,7 +124,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
   onAppLaunch,
   onInsufficientBalance,
 }) => {
-  const { balance, spendTokens, isLoading } = useWallet();
+  const { balance, spendTokens, refundTokens, isLoading } = useWallet();
   
   // Component state
   const [launchingApp, setLaunchingApp] = useState<string | null>(null);
@@ -175,14 +176,20 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
   const launchApp = async (app: AppConfig) => {
     // Check if user has sufficient balance
     if (balance < minTokensRequired) {
-      Alert.alert(
-        'Insufficient Balance',
-        `You need at least ${minTokensRequired} tokens (${minTokensRequired / tokensPerMinute} minute${minTokensRequired / tokensPerMinute !== 1 ? 's' : ''}) to launch ${app.name}.`,
-        [
-          { text: 'Complete Quests', onPress: onInsufficientBalance },
-          { text: 'Cancel', style: 'cancel' },
-        ]
+      const error = AppLaunchErrorHandler.createAppLaunchError(
+        'INSUFFICIENT_BALANCE',
+        app.name,
+        undefined,
+        0
       );
+      
+      await AppLaunchErrorHandler.handleAppLaunchError(
+        error,
+        (amount, description) => refundTokens(amount, description),
+        { suggestAlternatives: true }
+      );
+      
+      onInsufficientBalance?.();
       return;
     }
 
@@ -206,21 +213,56 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
           [{ text: 'OK' }]
         );
       } else {
-        // Refund tokens if launch failed
-        await refundTokens(app);
+        // Create appropriate error based on failure type
+        const error = AppLaunchErrorHandler.createAppLaunchError(
+          'DEEP_LINK_FAILED',
+          app.name,
+          undefined,
+          minTokensRequired
+        );
+        
+        await AppLaunchErrorHandler.handleAppLaunchError(
+          error,
+          (amount, description) => refundTokens(amount, description),
+          { 
+            showAlert: true,
+            suggestAlternatives: true,
+            autoRefund: true,
+            logError: true
+          }
+        );
       }
 
     } catch (error) {
       console.error('Error launching app:', error);
       
-      Alert.alert(
-        'Launch Failed',
-        `Failed to launch ${app.name}. ${error instanceof Error ? error.message : 'Please try again.'}`,
-        [{ text: 'OK' }]
+      // Determine error type based on the error
+      let errorType: AppLaunchError['type'] = 'UNKNOWN';
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('Network')) {
+          errorType = 'NETWORK_ERROR';
+        } else if (error.message.includes('balance') || error.message.includes('Balance')) {
+          errorType = 'INSUFFICIENT_BALANCE';
+        }
+      }
+      
+      const appError = AppLaunchErrorHandler.createAppLaunchError(
+        errorType,
+        app.name,
+        error instanceof Error ? error : new Error('Unknown error'),
+        minTokensRequired
       );
       
-      // Attempt to refund tokens
-      await refundTokens(app);
+      await AppLaunchErrorHandler.handleAppLaunchError(
+        appError,
+        (amount, description) => refundTokens(amount, description),
+        { 
+          showAlert: true,
+          suggestAlternatives: true,
+          autoRefund: true,
+          logError: true
+        }
+      );
     } finally {
       setLaunchingApp(null);
     }
@@ -243,32 +285,58 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
         if (canOpenWeb) {
           await Linking.openURL(app.webUrl);
           return true;
+        } else {
+          // Web fallback also failed
+          const error = AppLaunchErrorHandler.createAppLaunchError(
+            'WEB_FALLBACK_FAILED',
+            app.name,
+            new Error('Web URL cannot be opened'),
+            minTokensRequired
+          );
+          
+          await AppLaunchErrorHandler.handleAppLaunchError(
+            error,
+            (amount, description) => refundTokens(amount, description),
+            { 
+              showAlert: true,
+              suggestAlternatives: true,
+              autoRefund: true,
+              logError: true
+            }
+          );
+          return false;
         }
       }
 
       throw new Error('No valid launch method available');
     } catch (error) {
       console.error(`Failed to launch ${app.name}:`, error);
-      return false;
-    }
-  };
-
-  const refundTokens = async (app: AppConfig) => {
-    try {
-      // Note: In a real implementation, you'd want to implement a proper refund mechanism
-      // For now, we'll just log the refund attempt
-      console.log(`Refunding ${minTokensRequired} tokens for failed ${app.name} launch`);
       
-      // You could implement this by adding a refund method to the wallet context
-      // await refundTokens(minTokensRequired, `Refund for failed ${app.name} launch`);
+      // Determine specific error type
+      let errorType: AppLaunchError['type'] = 'DEEP_LINK_FAILED';
+      if (error instanceof Error && error.message.includes('network')) {
+        errorType = 'NETWORK_ERROR';
+      }
       
-      Alert.alert(
-        'Launch Failed',
-        `${app.name} could not be opened. Your tokens have been refunded.`,
-        [{ text: 'OK' }]
+      const appError = AppLaunchErrorHandler.createAppLaunchError(
+        errorType,
+        app.name,
+        error instanceof Error ? error : new Error('Unknown launch error'),
+        minTokensRequired
       );
-    } catch (error) {
-      console.error('Error refunding tokens:', error);
+      
+      await AppLaunchErrorHandler.handleAppLaunchError(
+        appError,
+        (amount, description) => refundTokens(amount, description),
+        { 
+          showAlert: false, // Don't show alert here, let the caller handle it
+          suggestAlternatives: true,
+          autoRefund: true,
+          logError: true
+        }
+      );
+      
+      return false;
     }
   };
 
