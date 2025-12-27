@@ -23,6 +23,7 @@ import {
 import { useWallet } from '../context/WalletContext';
 import { AppConfig } from '../lib/types';
 import { AppLaunchErrorHandler, AppLaunchError } from '../lib/errorHandling';
+import { windowManager } from '../lib/windowManager';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -121,11 +122,13 @@ interface TimerState {
   appName: string;
   startTime: number;
   tokensSpent: number;
+  windowOpened: boolean;
+  lastChargeTime: number; // Track when we last charged tokens
 }
 
 export const AppLauncher: React.FC<AppLauncherProps> = ({
   apps = DEFAULT_APPS,
-  minTokensRequired = 5, // Minimum 1 minute of usage
+  minTokensRequired = 1, // Minimum 1 token to start (proportional charging)
   tokensPerMinute = 5,
   style,
   onAppLaunch,
@@ -163,9 +166,22 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
   // Check app availability on mount
   useEffect(() => {
     checkAppAvailability();
-  }, [apps]);
+    
+    // Set up window manager callback for when windows are closed
+    windowManager.setOnWindowClosed((appName: string) => {
+      console.log(`Window closed for ${appName}, stopping timer`);
+      if (activeTimer && activeTimer.appName === appName) {
+        stopTimer();
+      }
+    });
+    
+    // Cleanup on unmount
+    return () => {
+      windowManager.cleanup();
+    };
+  }, [apps, activeTimer]);
 
-  // Timer effect - update current time and handle token deduction
+  // Timer effect - update current time and handle proportional token deduction
   useEffect(() => {
     if (!activeTimer) return;
 
@@ -173,51 +189,80 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
       const now = Date.now();
       setCurrentTime(now);
       
-      const elapsedMinutes = Math.floor((now - activeTimer.startTime) / 60000);
-      const tokensToSpend = elapsedMinutes * tokensPerMinute;
-      const newTokensSpent = tokensToSpend - activeTimer.tokensSpent;
+      // Calculate elapsed time in seconds since last charge
+      const elapsedSinceLastCharge = now - activeTimer.lastChargeTime;
+      const secondsElapsed = Math.floor(elapsedSinceLastCharge / 1000);
       
-      if (newTokensSpent > 0) {
-        // Check if user has enough balance
-        if (balance >= newTokensSpent) {
-          spendTokens(newTokensSpent, `${activeTimer.appName} usage`);
-          setActiveTimer(prev => prev ? {
-            ...prev,
-            tokensSpent: tokensToSpend
-          } : null);
-        } else {
-          // Insufficient balance - stop timer
-          Alert.alert(
-            'Insufficient Balance',
-            `Your balance is too low to continue using ${activeTimer.appName}. The timer has been stopped.`,
-            [{ text: 'OK' }]
-          );
-          stopTimer();
+      // Only charge if at least 1 second has passed
+      if (secondsElapsed > 0) {
+        // Calculate proportional tokens: 5 tokens per minute = 5/60 tokens per second
+        const tokensPerSecond = tokensPerMinute / 60;
+        const tokensToCharge = Math.floor(secondsElapsed * tokensPerSecond * 100) / 100; // Round to 2 decimal places
+        const tokensToChargeInteger = Math.ceil(tokensToCharge); // Round up to nearest integer
+        
+        if (tokensToChargeInteger > 0) {
+          // Check if user has enough balance
+          if (balance >= tokensToChargeInteger) {
+            spendTokens(tokensToChargeInteger, `${activeTimer.appName} usage (${secondsElapsed}s)`);
+            setActiveTimer(prev => prev ? {
+              ...prev,
+              tokensSpent: prev.tokensSpent + tokensToChargeInteger,
+              lastChargeTime: now
+            } : null);
+            
+            console.log(`Charged ${tokensToChargeInteger} tokens for ${secondsElapsed} seconds of ${activeTimer.appName} usage`);
+          } else {
+            // Insufficient balance - close window and stop timer
+            console.log(`Insufficient balance for ${activeTimer.appName}, closing window`);
+            
+            if (activeTimer.windowOpened) {
+              windowManager.closeWindow(activeTimer.appName);
+            }
+            
+            Alert.alert(
+              'Time\'s Up!',
+              `Your balance is too low to continue using ${activeTimer.appName}. The app has been closed automatically.`,
+              [{ text: 'OK' }]
+            );
+            stopTimer();
+          }
         }
+      }
+      
+      // Check if window is still open (user might have closed it)
+      if (activeTimer.windowOpened && !windowManager.isWindowOpen(activeTimer.appName)) {
+        console.log(`Window for ${activeTimer.appName} was closed by user`);
+        stopTimer();
       }
     }, 1000); // Update every second
 
     return () => clearInterval(interval);
   }, [activeTimer, balance, spendTokens, tokensPerMinute]);
 
-  const startTimer = (appName: string) => {
+  const startTimer = (appName: string, windowOpened: boolean = false) => {
     const now = Date.now();
     setActiveTimer({
       appName,
       startTime: now,
-      tokensSpent: 0
+      tokensSpent: 0,
+      windowOpened,
+      lastChargeTime: now // Initialize last charge time to start time
     });
     setCurrentTime(now);
     
-    // Spend initial tokens for the first minute
-    spendTokens(tokensPerMinute, `${appName} initial usage`);
-    
-    console.log(`Timer started for ${appName}`);
+    // No upfront token charge - tokens will be charged proportionally as time passes
+    console.log(`Timer started for ${appName} (window opened: ${windowOpened}) - proportional charging enabled`);
   };
 
   const stopTimer = () => {
     if (activeTimer) {
       console.log(`Timer stopped for ${activeTimer.appName}. Total spent: ${activeTimer.tokensSpent} tokens`);
+      
+      // Close window if it was opened by us
+      if (activeTimer.windowOpened) {
+        windowManager.closeWindow(activeTimer.appName);
+      }
+      
       setActiveTimer(null);
     }
   };
@@ -265,11 +310,12 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
       return;
     }
 
-    // Check if user has sufficient balance
-    if (balance < tokensPerMinute) {
+    // Check if user has sufficient balance for at least a few seconds of usage
+    const minimumTokensNeeded = 1; // At least 1 token to start
+    if (balance < minimumTokensNeeded) {
       Alert.alert(
         'Insufficient Balance',
-        `You need at least ${tokensPerMinute} tokens to launch ${app.name}. You currently have ${balance} tokens.\n\nComplete quests to earn more tokens!`,
+        `You need at least ${minimumTokensNeeded} token to launch ${app.name}. You currently have ${balance} tokens.\n\nComplete quests to earn more tokens!`,
         [
           { text: 'OK' },
           { text: 'Go to Quests', onPress: () => onInsufficientBalance?.() }
@@ -286,8 +332,9 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
       const launched = await attemptAppLaunch(app);
       
       if (launched) {
-        // Start the timer
-        startTimer(app.name);
+        // Start the timer with window management info
+        const windowOpened = Platform.OS === 'web' && !!app.webUrl;
+        startTimer(app.name, windowOpened);
         onAppLaunch?.(app);
       } else {
         Alert.alert(
@@ -313,11 +360,30 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
     try {
       console.log(`Attempting to launch ${app.name} on ${Platform.OS}`);
       
-      // On web platform, prioritize web URLs
+      // On web platform, use window manager for better control
       if (Platform.OS === 'web' && app.webUrl) {
-        console.log(`Opening web URL: ${app.webUrl}`);
-        await Linking.openURL(app.webUrl);
-        return true;
+        console.log(`Opening managed window for ${app.name}: ${app.webUrl}`);
+        
+        const windowOpened = await windowManager.openWindow(
+          app.name, 
+          app.webUrl,
+          (closedAppName) => {
+            // This callback is triggered when user closes the window
+            console.log(`User closed window for ${closedAppName}`);
+            if (activeTimer && activeTimer.appName === closedAppName) {
+              stopTimer();
+            }
+          }
+        );
+        
+        if (windowOpened) {
+          return true;
+        } else {
+          // Fallback to regular link opening if window manager fails
+          console.log(`Window manager failed, falling back to regular link opening`);
+          await Linking.openURL(app.webUrl);
+          return true;
+        }
       }
 
       // On mobile, try deep link first
@@ -400,7 +466,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
 
   const renderAppItem = ({ item: app }: { item: AppConfig }) => {
     const isAvailable = appAvailability[app.name] !== false;
-    const canAfford = balance >= tokensPerMinute;
+    const canAfford = balance >= minTokensRequired; // Only need minimum tokens to start
     const isLaunching = launchingApp === app.name;
     const isTimerRunning = activeTimer?.appName === app.name;
     const isDisabled = !canAfford || isLoading || isLaunching || (activeTimer && !isTimerRunning);
@@ -437,7 +503,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
           </Text>
         ) : !canAfford ? (
           <Text style={styles.insufficientText}>
-            Need {tokensPerMinute - balance} more tokens
+            Need more tokens
           </Text>
         ) : activeTimer ? (
           <Text style={styles.blockedText}>
@@ -445,7 +511,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
           </Text>
         ) : (
           <Text style={styles.costText}>
-            {tokensPerMinute} tokens/min
+            ~{tokensPerMinute} tokens/min
           </Text>
         )}
       </TouchableOpacity>
@@ -471,9 +537,19 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
         <View style={styles.timerDisplay}>
           <View style={styles.timerHeader}>
             <Text style={styles.timerAppName}>{activeTimer.appName}</Text>
-            <TouchableOpacity style={styles.stopTimerButton} onPress={stopTimer}>
-              <Text style={styles.stopTimerText}>⏹️ Stop</Text>
-            </TouchableOpacity>
+            <View style={styles.timerButtons}>
+              {activeTimer.windowOpened && (
+                <TouchableOpacity 
+                  style={styles.focusWindowButton} 
+                  onPress={() => windowManager.focusWindow(activeTimer.appName)}
+                >
+                  <Text style={styles.focusWindowText}>🔍 Focus</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity style={styles.stopTimerButton} onPress={stopTimer}>
+                <Text style={styles.stopTimerText}>⏹️ Stop</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           <View style={styles.timerStats}>
             <Text style={styles.timerTime}>
@@ -484,7 +560,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
               Spent: {activeTimer.tokensSpent} tokens
             </Text>
             <Text style={styles.timerRemaining}>
-              Remaining: ~{Math.floor(balance / tokensPerMinute)} min
+              Balance: {balance} tokens (~{Math.floor(balance / tokensPerMinute * 60)} seconds)
             </Text>
           </View>
         </View>
@@ -494,7 +570,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
       <View style={styles.header}>
         <Text style={styles.title}>Entertainment Apps</Text>
         <Text style={styles.balanceInfo}>
-          Balance: {balance} tokens ({Math.floor(balance / tokensPerMinute)} minutes available)
+          Balance: {balance} tokens (~{Math.floor(balance / tokensPerMinute * 60)} seconds available)
         </Text>
       </View>
 
@@ -524,13 +600,16 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
       {/* Usage Info */}
       <View style={styles.infoContainer}>
         <Text style={styles.infoText}>
-          • Apps charge {tokensPerMinute} tokens per minute of usage
+          • Apps charge proportionally: ~{tokensPerMinute} tokens per minute
         </Text>
         <Text style={styles.infoText}>
-          • Timer starts when app launches successfully
+          • Tokens charged every second based on actual usage
         </Text>
         <Text style={styles.infoText}>
-          • Return here to stop the timer and save tokens
+          • Apps close automatically when balance runs out
+        </Text>
+        <Text style={styles.infoText}>
+          • Timer stops automatically when you close the app
         </Text>
       </View>
     </Animated.View>
@@ -692,6 +771,24 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: colors.success,
+  } as TextStyle,
+
+  timerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  } as ViewStyle,
+
+  focusWindowButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  } as ViewStyle,
+
+  focusWindowText: {
+    color: colors.background,
+    fontSize: 12,
+    fontWeight: 'bold',
   } as TextStyle,
 
   stopTimerButton: {
