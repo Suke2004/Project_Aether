@@ -19,7 +19,7 @@ import {
   Animated,
 } from 'react-native';
 import { Camera, CameraType } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
+// import * as ImagePicker from 'expo-image-picker';
 import { verifyQuestWithRetry } from '../lib/gemini';
 import { useWallet } from '../context/WalletContext';
 import { useAuth } from '../context/AuthContext';
@@ -165,6 +165,9 @@ export const QuestCam: React.FC<QuestCamProps> = ({
   };
 
   const selectFromGallery = async () => {
+    // Temporarily disabled - expo-image-picker import issue
+    Alert.alert('Feature Disabled', 'Gallery selection temporarily disabled');
+    /*
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
@@ -190,6 +193,7 @@ export const QuestCam: React.FC<QuestCamProps> = ({
       Alert.alert('Error', 'Failed to select image. Please try again.');
       setIsProcessing(false);
     }
+    */
   };
 
   const verifyQuestCompletion = async (imageUri: string) => {
