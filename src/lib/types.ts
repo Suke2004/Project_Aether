@@ -60,6 +60,10 @@ export interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, role: 'parent' | 'child') => Promise<void>;
   signOut: () => Promise<void>;
+  // Additional helper functions for role-based access control
+  hasRole: (requiredRole: 'parent' | 'child') => boolean;
+  isAuthenticated: () => boolean;
+  refreshProfile: () => Promise<void>;
 }
 
 // AI Service interfaces

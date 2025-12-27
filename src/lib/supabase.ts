@@ -7,39 +7,14 @@ import { createClient, SupabaseClient, User, Session } from '@supabase/supabase-
 import { SUPABASE_CONFIG, validateConfig } from './config';
 import { Profile, Transaction, QuestType } from './types';
 
-// Database type definitions for better type safety
-export interface Database {
-  public: {
-    Tables: {
-      profiles: {
-        Row: Profile;
-        Insert: Omit<Profile, 'id' | 'created_at' | 'updated_at'> & {
-          id: string;
-        };
-        Update: Partial<Omit<Profile, 'id'>>;
-      };
-      transactions: {
-        Row: Transaction;
-        Insert: Omit<Transaction, 'id'>;
-        Update: Partial<Omit<Transaction, 'id'>>;
-      };
-      quest_types: {
-        Row: QuestType;
-        Insert: Omit<QuestType, 'id'>;
-        Update: Partial<Omit<QuestType, 'id'>>;
-      };
-    };
-  };
-}
-
 // Initialize Supabase client
-let supabase: SupabaseClient<Database> | null = null;
+let supabase: SupabaseClient | null = null;
 
 /**
  * Get or create the Supabase client instance
  * Implements singleton pattern for efficient resource usage
  */
-export const getSupabaseClient = (): SupabaseClient<Database> => {
+export const getSupabaseClient = (): SupabaseClient => {
   if (!supabase) {
     // Validate configuration before creating client
     if (!validateConfig()) {
@@ -47,7 +22,7 @@ export const getSupabaseClient = (): SupabaseClient<Database> => {
     }
 
     try {
-      supabase = createClient<Database>(
+      supabase = createClient(
         SUPABASE_CONFIG.url,
         SUPABASE_CONFIG.anonKey,
         {

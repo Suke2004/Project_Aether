@@ -12,7 +12,7 @@ export const SUPABASE_CONFIG = {
 // Google Gemini AI configuration
 export const GEMINI_CONFIG = {
   apiKey: process.env.EXPO_PUBLIC_GEMINI_KEY || '',
-  model: 'gemini-1.5-flash',
+  model: 'gemini-2.5-flash',
 };
 
 // App configuration
