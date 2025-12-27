@@ -6,6 +6,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_CONFIG, APP_CONFIG } from './config';
 import { AIVerificationResult } from './types';
+import { AIServiceErrorHandler, AIServiceError } from './errorHandling';
 
 // Initialize Gemini AI client
 const genAI = new GoogleGenerativeAI(GEMINI_CONFIG.apiKey);
@@ -44,29 +45,49 @@ export const convertImageToBase64 = async (imageUri: string): Promise<string> =>
 };
 
 /**
- * Verifies quest completion using Google Gemini AI
+ * Verifies quest completion using Google Gemini AI with comprehensive error handling
  * @param imageUri - URI of the proof image
  * @param questDescription - Description of the quest to verify
  * @param verificationPrompt - Custom verification prompt for the quest
+ * @param requestManualVerification - Optional callback for manual verification fallback
  * @returns Promise<AIVerificationResult> - Verification result with confidence score
  */
 export const verifyQuest = async (
   imageUri: string,
   questDescription: string,
-  verificationPrompt: string
+  verificationPrompt: string,
+  requestManualVerification?: () => Promise<boolean>
 ): Promise<AIVerificationResult> => {
   try {
     // Validate inputs
     if (!imageUri || !questDescription || !verificationPrompt) {
-      throw new Error('Missing required parameters for quest verification');
+      throw AIServiceErrorHandler.createAIServiceError(
+        'CONFIG_ERROR',
+        'Missing required parameters for quest verification',
+        false
+      );
     }
 
     if (!GEMINI_CONFIG.apiKey) {
-      throw new Error('Gemini API key not configured');
+      throw AIServiceErrorHandler.createAIServiceError(
+        'CONFIG_ERROR',
+        'Gemini API key not configured',
+        false
+      );
     }
 
     // Convert image to base64
-    const base64Image = await convertImageToBase64(imageUri);
+    let base64Image: string;
+    try {
+      base64Image = await convertImageToBase64(imageUri);
+    } catch (error) {
+      throw AIServiceErrorHandler.createAIServiceError(
+        'INVALID_RESPONSE',
+        'Image processing failed. Please try taking a new photo.',
+        false,
+        error instanceof Error ? error : undefined
+      );
+    }
 
     // Get the generative model
     const model = genAI.getGenerativeModel({ model: GEMINI_CONFIG.model });
@@ -100,12 +121,34 @@ Be encouraging but fair in your assessment. The confidence score should reflect 
 
     // Make the API call with timeout handling
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('AI verification timeout')), 30000); // 30 second timeout
+      setTimeout(() => {
+        reject(AIServiceErrorHandler.createAIServiceError(
+          'TIMEOUT',
+          'AI verification service timeout',
+          true
+        ));
+      }, 30000); // 30 second timeout
     });
 
     const apiCallPromise = model.generateContent([prompt, imagePart]);
 
-    const result = await Promise.race([apiCallPromise, timeoutPromise]);
+    let result;
+    try {
+      result = await Promise.race([apiCallPromise, timeoutPromise]);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('timeout')) {
+        throw error; // Re-throw timeout errors as-is
+      }
+      
+      // Handle network and API errors
+      throw AIServiceErrorHandler.createAIServiceError(
+        'API_ERROR',
+        'AI verification service encountered an error',
+        true,
+        error instanceof Error ? error : undefined
+      );
+    }
+
     const response = await result.response;
     const text = response.text();
 
@@ -147,33 +190,61 @@ Be encouraging but fair in your assessment. The confidence score should reflect 
     return parsedResult;
 
   } catch (error) {
-    // Handle different types of errors gracefully
-    if (error instanceof Error) {
-      if (error.message.includes('timeout')) {
-        throw new Error('AI verification service is currently unavailable. Please try again later.');
-      }
+    // Handle AI service errors with fallback mechanisms
+    if (error instanceof Error && 'type' in error) {
+      const aiError = error as AIServiceError;
       
-      if (error.message.includes('API key')) {
-        throw new Error('AI service configuration error. Please contact support.');
+      const { shouldRetry, manualVerificationRequested } = await AIServiceErrorHandler.handleAIServiceError(
+        aiError,
+        requestManualVerification
+      );
+
+      if (manualVerificationRequested) {
+        // Return a result indicating manual verification was requested
+        return {
+          isValid: false,
+          confidence: 0,
+          reasoning: 'Manual verification requested due to AI service unavailability',
+        };
       }
-      
-      if (error.message.includes('base64')) {
-        throw new Error('Image processing failed. Please try taking a new photo.');
+
+      if (shouldRetry) {
+        // This will be handled by the retry wrapper
+        throw aiError;
       }
-      
-      // Generic error handling
-      throw new Error(`Quest verification failed: ${error.message}`);
     }
     
-    throw new Error('An unexpected error occurred during quest verification');
+    // For unknown errors, create a generic AI service error
+    const genericError = AIServiceErrorHandler.createAIServiceError(
+      'API_ERROR',
+      error instanceof Error ? error.message : 'Unknown AI service error',
+      true,
+      error instanceof Error ? error : undefined
+    );
+
+    const { shouldRetry, manualVerificationRequested } = await AIServiceErrorHandler.handleAIServiceError(
+      genericError,
+      requestManualVerification
+    );
+
+    if (manualVerificationRequested) {
+      return {
+        isValid: false,
+        confidence: 0,
+        reasoning: 'Manual verification requested due to AI service error',
+      };
+    }
+
+    throw genericError;
   }
 };
 
 /**
- * Retry wrapper for quest verification with exponential backoff
+ * Retry wrapper for quest verification with exponential backoff and comprehensive error handling
  * @param imageUri - URI of the proof image
  * @param questDescription - Description of the quest to verify
  * @param verificationPrompt - Custom verification prompt for the quest
+ * @param requestManualVerification - Optional callback for manual verification fallback
  * @param maxRetries - Maximum number of retry attempts (default from config)
  * @returns Promise<AIVerificationResult> - Verification result
  */
@@ -181,34 +252,14 @@ export const verifyQuestWithRetry = async (
   imageUri: string,
   questDescription: string,
   verificationPrompt: string,
+  requestManualVerification?: () => Promise<boolean>,
   maxRetries: number = APP_CONFIG.maxRetries
 ): Promise<AIVerificationResult> => {
-  let lastError: Error;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await verifyQuest(imageUri, questDescription, verificationPrompt);
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error('Unknown error');
-      
-      // Don't retry on configuration errors or invalid input
-      if (lastError.message.includes('configuration') || 
-          lastError.message.includes('Missing required parameters')) {
-        throw lastError;
-      }
-      
-      // If this is the last attempt, throw the error
-      if (attempt === maxRetries) {
-        throw lastError;
-      }
-      
-      // Exponential backoff: wait 2^attempt seconds
-      const delay = Math.pow(2, attempt) * 1000;
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
-  
-  throw lastError!;
+  return await AIServiceErrorHandler.retryWithExponentialBackoff(
+    () => verifyQuest(imageUri, questDescription, verificationPrompt, requestManualVerification),
+    maxRetries,
+    1000 // 1 second base delay
+  );
 };
 
 /**

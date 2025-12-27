@@ -50,6 +50,7 @@ export interface WalletContextType {
   isLoading: boolean;
   earnTokens: (amount: number, description: string, proofUrl?: string) => Promise<void>;
   spendTokens: (amount: number, description: string, appName?: string) => Promise<void>;
+  refundTokens: (amount: number, description: string) => Promise<void>;
   refreshBalance: () => Promise<void>;
   // Offline queue status
   offlineStatus: {

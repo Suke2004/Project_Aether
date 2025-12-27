@@ -22,7 +22,9 @@ import { Camera, CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { verifyQuestWithRetry } from '../lib/gemini';
 import { useWallet } from '../context/WalletContext';
+import { useAuth } from '../context/AuthContext';
 import { QuestType, AIVerificationResult } from '../lib/types';
+import { useManualVerification } from '../lib/manualVerification';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -53,6 +55,8 @@ export const QuestCam: React.FC<QuestCamProps> = ({
   style,
 }) => {
   const { earnTokens } = useWallet();
+  const { profile } = useAuth();
+  const { requestVerification } = useManualVerification();
   
   // Camera and image states
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -193,12 +197,93 @@ export const QuestCam: React.FC<QuestCamProps> = ({
       setIsProcessing(true);
       setVerificationResult(null);
       
-      // Call AI verification service
+      // Create manual verification fallback function
+      const requestManualVerification = async (): Promise<boolean> => {
+        if (!profile) {
+          console.error('No profile available for manual verification');
+          return false;
+        }
+
+        try {
+          Alert.alert(
+            'AI Verification Failed',
+            'The AI service is currently unavailable. Would you like to request manual verification from a parent?',
+            [
+              { text: 'Cancel', style: 'cancel', onPress: () => {} },
+              {
+                text: 'Request Parent Review',
+                onPress: async () => {
+                  try {
+                    const manualResult = await requestVerification(
+                      profile.id,
+                      quest.description,
+                      quest.verification_prompt,
+                      imageUri
+                    );
+
+                    if (manualResult) {
+                      // Process manual verification result
+                      const result: AIVerificationResult = {
+                        isValid: manualResult.approved,
+                        confidence: manualResult.confidence,
+                        reasoning: manualResult.reasoning || 'Manually verified by parent',
+                      };
+
+                      setVerificationResult(result);
+                      setShowResult(true);
+
+                      if (result.isValid) {
+                        await earnTokens(quest.token_reward, `Quest completed: ${quest.name} (Manual verification)`, imageUri);
+                        setTimeout(() => {
+                          onQuestComplete(true, quest.token_reward);
+                        }, 2000);
+                      } else {
+                        setTimeout(() => {
+                          setShowResult(false);
+                          setCapturedImage(null);
+                          setVerificationResult(null);
+                        }, 3000);
+                      }
+                    } else {
+                      Alert.alert(
+                        'Verification Timeout',
+                        'Manual verification timed out or was not completed. Please try again later.',
+                        [{ text: 'OK', onPress: retryCapture }]
+                      );
+                    }
+                  } catch (error) {
+                    console.error('Manual verification failed:', error);
+                    Alert.alert(
+                      'Verification Failed',
+                      'Manual verification could not be completed. Please try again.',
+                      [{ text: 'OK', onPress: retryCapture }]
+                    );
+                  }
+                },
+              },
+            ]
+          );
+          return true; // Indicate that manual verification was requested
+        } catch (error) {
+          console.error('Failed to request manual verification:', error);
+          return false;
+        }
+      };
+      
+      // Call AI verification service with manual fallback
       const result = await verifyQuestWithRetry(
         imageUri,
         quest.description,
-        quest.verification_prompt
+        quest.verification_prompt,
+        requestManualVerification
       );
+      
+      // Check if manual verification was requested (indicated by confidence 0)
+      if (result.confidence === 0 && result.reasoning?.includes('Manual verification')) {
+        // Manual verification is in progress, don't process the result yet
+        setIsProcessing(false);
+        return;
+      }
       
       setVerificationResult(result);
       setShowResult(true);
@@ -223,6 +308,51 @@ export const QuestCam: React.FC<QuestCamProps> = ({
     } catch (error) {
       console.error('Quest verification error:', error);
       
+      // Check if this is an AI service error that should trigger manual verification
+      if (error instanceof Error && 'type' in error) {
+        const aiError = error as any;
+        if (aiError.type === 'TIMEOUT' || aiError.type === 'API_ERROR' || aiError.type === 'NETWORK_ERROR') {
+          // AI service failed, offer manual verification
+          Alert.alert(
+            'AI Service Unavailable',
+            'The AI verification service is currently unavailable. Would you like to request manual verification from a parent?',
+            [
+              { text: 'Cancel', onPress: onCancel },
+              { text: 'Retry AI', onPress: () => verifyQuestCompletion(imageUri) },
+              {
+                text: 'Request Parent Review',
+                onPress: async () => {
+                  if (profile) {
+                    try {
+                      const manualResult = await requestVerification(
+                        profile.id,
+                        quest.description,
+                        quest.verification_prompt,
+                        imageUri
+                      );
+
+                      if (manualResult?.approved) {
+                        await earnTokens(quest.token_reward, `Quest completed: ${quest.name} (Manual verification)`, imageUri);
+                        onQuestComplete(true, quest.token_reward);
+                      } else {
+                        Alert.alert('Quest Not Approved', 'The quest was not approved by the parent.');
+                        retryCapture();
+                      }
+                    } catch (manualError) {
+                      console.error('Manual verification failed:', manualError);
+                      Alert.alert('Verification Failed', 'Manual verification could not be completed.');
+                      retryCapture();
+                    }
+                  }
+                },
+              },
+            ]
+          );
+          return;
+        }
+      }
+      
+      // Generic error handling
       Alert.alert(
         'Verification Failed',
         error instanceof Error ? error.message : 'Unable to verify quest completion. Please try again.',
