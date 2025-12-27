@@ -1,15 +1,14 @@
 /**
  * Stable Timer Component
- * Combines good visuals with stable functionality and token integration
+ * Precise synchronization: 5 tokens per minute = 1 token every 12 seconds
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
 interface StableTimerProps {
   appName: string;
   startTime: number;
-  tokensSpent: number;
   balance: number;
   tokensPerMinute: number;
   onStop: () => void;
@@ -21,7 +20,6 @@ interface StableTimerProps {
 export const StableTimer = ({
   appName,
   startTime,
-  tokensSpent,
   balance,
   tokensPerMinute,
   onStop,
@@ -30,66 +28,75 @@ export const StableTimer = ({
   onTokenCharge,
 }: StableTimerProps) => {
   const [currentTime, setCurrentTime] = useState(Date.now());
-  const [localTokensSpent, setLocalTokensSpent] = useState(tokensSpent);
+  const [localTokensSpent, setLocalTokensSpent] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastChargeTimeRef = useRef(startTime);
+  const totalTokensChargedRef = useRef(0);
 
   useEffect(() => {
-    console.log('🟦 StableTimer: Starting for', appName);
+    console.log('🟦 StableTimer: Starting synchronized timer for', appName);
+    console.log('🟦 Rate:', tokensPerMinute, 'tokens/minute = 1 token every', 60/tokensPerMinute, 'seconds');
     
     // Clear any existing interval
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
     
-    // Start new interval
-    intervalRef.current = setInterval(() => {
+    // Calculate charge interval: for 5 tokens/minute = 1 token every 12 seconds
+    const secondsPerToken = 60 / tokensPerMinute;
+    const chargeIntervalMs = secondsPerToken * 1000;
+    
+    console.log('🟦 Charge interval:', chargeIntervalMs, 'ms (', secondsPerToken, 'seconds per token)');
+    
+    // Update display every second
+    const displayInterval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    
+    // Charge tokens at precise intervals
+    const chargeInterval = setInterval(() => {
       const now = Date.now();
-      setCurrentTime(now);
+      const elapsedSinceStart = now - startTime;
+      const expectedTokens = Math.floor(elapsedSinceStart / chargeIntervalMs);
+      const tokensToCharge = expectedTokens - totalTokensChargedRef.current;
       
-      // Calculate elapsed time since last charge
-      const elapsedSinceLastCharge = now - lastChargeTimeRef.current;
-      const secondsElapsed = Math.floor(elapsedSinceLastCharge / 1000);
-      
-      console.log('🟦 StableTimer: Tick', { 
-        appName, 
-        elapsed: Math.floor((now - startTime) / 1000),
-        secondsElapsed,
-        balance 
+      console.log('🟦 Timer check:', {
+        appName,
+        elapsedMs: elapsedSinceStart,
+        elapsedSeconds: Math.floor(elapsedSinceStart / 1000),
+        expectedTokens,
+        alreadyCharged: totalTokensChargedRef.current,
+        tokensToCharge,
+        balance
       });
       
-      // Charge tokens every second
-      if (secondsElapsed > 0) {
-        const tokensPerSecond = tokensPerMinute / 60;
-        const tokensToCharge = Math.ceil(secondsElapsed * tokensPerSecond);
-        
-        if (tokensToCharge > 0 && balance >= tokensToCharge) {
-          console.log('🟦 StableTimer: Charging', tokensToCharge, 'tokens');
-          onTokenCharge(tokensToCharge, `${appName} usage (${secondsElapsed}s)`);
-          setLocalTokensSpent(prev => prev + tokensToCharge);
-          lastChargeTimeRef.current = now;
-        } else if (balance < tokensToCharge) {
-          console.log('🟦 StableTimer: Insufficient balance, stopping');
+      if (tokensToCharge > 0) {
+        if (balance >= tokensToCharge) {
+          console.log('🟦 Charging', tokensToCharge, 'tokens for', appName);
+          onTokenCharge(tokensToCharge, `${appName} usage (${Math.floor(elapsedSinceStart / 1000)}s)`);
+          totalTokensChargedRef.current += tokensToCharge;
+          setLocalTokensSpent(totalTokensChargedRef.current);
+        } else {
+          console.log('🟦 Insufficient balance, stopping timer');
           onStop();
           return;
         }
       }
-    }, 1000);
+    }, 1000); // Check every second for precise timing
+
+    intervalRef.current = chargeInterval;
 
     // Cleanup function
     return () => {
       console.log('🟦 StableTimer: Cleaning up for', appName);
+      if (displayInterval) clearInterval(displayInterval);
+      if (chargeInterval) clearInterval(chargeInterval);
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
     };
   }, []); // Empty dependency array for stability
-
-  // Update local tokens spent when prop changes
-  useEffect(() => {
-    setLocalTokensSpent(tokensSpent);
-  }, [tokensSpent]);
 
   const formatTime = (elapsed: number) => {
     const minutes = Math.floor(elapsed / 60000);
@@ -107,6 +114,8 @@ export const StableTimer = ({
   };
 
   const elapsed = currentTime - startTime;
+  const secondsElapsed = Math.floor(elapsed / 1000);
+  const expectedTokensSpent = Math.floor(secondsElapsed / (60 / tokensPerMinute));
 
   return (
     <View style={styles.container}>
@@ -128,7 +137,20 @@ export const StableTimer = ({
         <Text style={styles.timeDisplay}>{formatTime(elapsed)}</Text>
         <Text style={styles.statText}>Spent: {localTokensSpent} tokens</Text>
         <Text style={styles.statText}>
+          Expected: {expectedTokensSpent} tokens
+        </Text>
+        <Text style={styles.statText}>
           Balance: {balance} tokens (~{Math.floor(balance / tokensPerMinute * 60)}s)
+        </Text>
+      </View>
+      
+      {/* Synchronization indicator */}
+      <View style={styles.syncIndicator}>
+        <Text style={[
+          styles.syncText,
+          localTokensSpent === expectedTokensSpent ? styles.syncGood : styles.syncBad
+        ]}>
+          {localTokensSpent === expectedTokensSpent ? '✅ SYNCHRONIZED' : '⚠️ SYNCING...'}
         </Text>
       </View>
     </View>
@@ -206,6 +228,25 @@ const styles = StyleSheet.create({
   statText: {
     fontSize: 12,
     color: '#b0b0b0',
+  } as TextStyle,
+
+  syncIndicator: {
+    marginTop: 8,
+    alignItems: 'center',
+  } as ViewStyle,
+
+  syncText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  } as TextStyle,
+
+  syncGood: {
+    color: '#00ff88',
+  } as TextStyle,
+
+  syncBad: {
+    color: '#ffaa00',
   } as TextStyle,
 });
 

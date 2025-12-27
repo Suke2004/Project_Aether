@@ -7,6 +7,11 @@ export { default as RealTimeClock } from './RealTimeClock';
 export { default as DevRoleSwitcher } from './DevRoleSwitcher';
 export { default as DebugTimer } from './DebugTimer';
 export { default as StableTimer } from './StableTimer';
+export { default as TimerTest } from './TimerTest';
+
+// Demo & Presentation Components
+export { DemoEnhancements, FloatingNotification } from './DemoEnhancements';
+export { default as HackathonShowcase } from './HackathonShowcase';
 
 // Animated Components
 export {

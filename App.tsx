@@ -11,6 +11,7 @@ import { WalletProvider } from './src/context';
 
 // Components
 import { DevRoleSwitcher } from './src/components';
+import { DemoEnhancements } from './src/components/DemoEnhancements';
 
 // Screens
 import { 
@@ -221,11 +222,13 @@ export default function App() {
         <ThemeProvider>
           <AuthProvider>
             <WalletProvider>
-              <View style={styles.container}>
-                <StatusBar style="light" backgroundColor="#0a0a0a" />
-                <AppNavigator />
-                <DevRoleSwitcher />
-              </View>
+              <DemoEnhancements showParticles={true} showGlow={true}>
+                <View style={styles.container}>
+                  <StatusBar style="light" backgroundColor="#0a0a0a" />
+                  <AppNavigator />
+                  <DevRoleSwitcher />
+                </View>
+              </DemoEnhancements>
             </WalletProvider>
           </AuthProvider>
         </ThemeProvider>

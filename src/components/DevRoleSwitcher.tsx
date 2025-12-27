@@ -1,3 +1,8 @@
+/**
+ * Development Role Switcher Component
+ * Allows switching between parent and child roles in development mode
+ */
+
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { useAuth } from '../context/AuthContext';

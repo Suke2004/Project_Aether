@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   Alert,
   Linking,
   Dimensions,
@@ -16,8 +15,6 @@ import {
 } from 'react-native';
 import { useWallet } from '../context/WalletContext';
 import { AppConfig } from '../lib/types';
-import { AppLaunchErrorHandler, AppLaunchError } from '../lib/errorHandling';
-import { windowManager } from '../lib/windowManager';
 import { StableTimer } from './StableTimer';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -116,9 +113,7 @@ interface AppLauncherProps {
 interface TimerState {
   appName: string;
   startTime: number;
-  tokensSpent: number;
   windowOpened: boolean;
-  lastChargeTime: number; // Track when we last charged tokens
 }
 
 export const AppLauncher = ({
@@ -129,7 +124,7 @@ export const AppLauncher = ({
   onAppLaunch,
   onInsufficientBalance,
 }: AppLauncherProps) => {
-  const { balance, spendTokens, refundTokens, isLoading } = useWallet();
+  const { balance, spendTokens, isLoading } = useWallet();
   
   // Component state - restored with proper timer state
   const [launchingApp, setLaunchingApp] = useState<string | null>(null);
@@ -138,10 +133,28 @@ export const AppLauncher = ({
   
   // Animation values
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Check app availability on mount
   useEffect(() => {
     checkAppAvailability();
+    
+    // Start pulsing animation for active indicators
+    const pulse = () => {
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.2,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]).start(() => pulse());
+    };
+    pulse();
     
     // Cleanup on unmount
     return () => {
@@ -155,9 +168,7 @@ export const AppLauncher = ({
     setActiveTimer({
       appName,
       startTime: Date.now(),
-      tokensSpent: 0,
       windowOpened,
-      lastChargeTime: Date.now(),
     });
   };
 
@@ -167,15 +178,9 @@ export const AppLauncher = ({
   };
 
   const handleTokenCharge = (amount: number, description: string) => {
-    console.log('🟦 Charging tokens:', amount, description);
+    console.log('🟦 Synchronized token charge:', amount, description);
     spendTokens(amount, description);
-    
-    // Update timer state
-    setActiveTimer(prev => prev ? {
-      ...prev,
-      tokensSpent: prev.tokensSpent + amount,
-      lastChargeTime: Date.now(),
-    } : null);
+    // No need to update timer state - StableTimer handles its own token tracking
   };
 
   const checkAppAvailability = async () => {
@@ -381,43 +386,69 @@ export const AppLauncher = ({
         style={[
           styles.appItem,
           isDisabled && styles.appItemDisabled,
+          isTimerRunning && styles.appItemActive,
         ]}
         onPress={() => launchApp(app)}
         disabled={isDisabled || false}
         activeOpacity={0.7}
       >
-        <View style={[styles.appIconContainer, isDisabled && styles.appIconDisabled]}>
+        <View style={[
+          styles.appIconContainer, 
+          isDisabled && styles.appIconDisabled,
+          isTimerRunning && styles.appIconActive,
+        ]}>
           {isLaunching ? (
             <ActivityIndicator size="large" color={colors.primary} />
           ) : (
-            <Text style={styles.appIcon}>{app.icon}</Text>
+            <Text style={[styles.appIcon, isTimerRunning && styles.appIconActiveText]}>
+              {app.icon}
+            </Text>
           )}
         </View>
         
-        <Text style={[styles.appName, isDisabled && styles.appNameDisabled]}>
+        <Text style={[
+          styles.appName, 
+          isDisabled && styles.appNameDisabled,
+          isTimerRunning && styles.appNameActive,
+        ]}>
           {app.name}
         </Text>
         
-        <Text style={[styles.appCategory, isDisabled && styles.appCategoryDisabled]}>
+        <Text style={[
+          styles.appCategory, 
+          isDisabled && styles.appCategoryDisabled,
+          isTimerRunning && styles.appCategoryActive,
+        ]}>
           {app.category}
         </Text>
         
         {isTimerRunning ? (
-          <Text style={styles.runningText}>
-            ⏱️ Timer Active
-          </Text>
+          <View style={styles.activeStatusContainer}>
+            <Text style={styles.runningText}>
+              ⏱️ ACTIVE
+            </Text>
+            <Animated.View style={[
+              styles.pulsingDot,
+              { transform: [{ scale: pulseAnim }] }
+            ]} />
+          </View>
         ) : !canAfford ? (
           <Text style={styles.insufficientText}>
-            Need more tokens
+            💰 Need more tokens
           </Text>
         ) : activeTimer ? (
           <Text style={styles.blockedText}>
-            Stop current timer first
+            ⏸️ Stop current timer first
           </Text>
         ) : (
-          <Text style={styles.costText}>
-            ~{tokensPerMinute} tokens/min
-          </Text>
+          <View style={styles.costContainer}>
+            <Text style={styles.costText}>
+              ~{tokensPerMinute} tokens/min
+            </Text>
+            <Text style={styles.costSubtext}>
+              Tap to launch
+            </Text>
+          </View>
         )}
       </TouchableOpacity>
     );
@@ -442,7 +473,6 @@ export const AppLauncher = ({
           key={`timer-${activeTimer.appName}`}
           appName={activeTimer.appName}
           startTime={activeTimer.startTime}
-          tokensSpent={activeTimer.tokensSpent}
           balance={balance}
           tokensPerMinute={tokensPerMinute}
           onStop={stopTimer}
@@ -451,12 +481,17 @@ export const AppLauncher = ({
         />
       )}
 
-      {/* Header */}
+      {/* Header with enhanced styling */}
       <View style={styles.header}>
-        <Text style={styles.title}>Entertainment Apps</Text>
-        <Text style={styles.balanceInfo}>
-          Balance: {balance} tokens (~{Math.floor(balance / tokensPerMinute * 60)} seconds available)
-        </Text>
+        <Text style={styles.title}>🎮 ENTERTAINMENT APPS</Text>
+        <View style={styles.balanceContainer}>
+          <Text style={styles.balanceInfo}>
+            Balance: {balance} tokens
+          </Text>
+          <Text style={styles.timeInfo}>
+            ~{Math.floor(balance / tokensPerMinute * 60)} seconds available
+          </Text>
+        </View>
       </View>
 
       {/* Apps Grid */}
@@ -470,20 +505,26 @@ export const AppLauncher = ({
         </View>
       </View>
 
-      {/* Low Balance Warning */}
+      {/* Enhanced Low Balance Warning */}
       {balance < minTokensRequired && (
         <View style={styles.warningContainer}>
           <Text style={styles.warningText}>
-            ⚠️ Insufficient balance to launch apps
+            ⚠️ INSUFFICIENT BALANCE
           </Text>
           <Text style={styles.warningSubtext}>
-            Complete quests to earn more tokens!
+            Complete quests to earn more tokens and unlock entertainment!
           </Text>
+          <View style={styles.warningActions}>
+            <Text style={styles.warningActionText}>
+              💎 Earn tokens through quests
+            </Text>
+          </View>
         </View>
       )}
 
-      {/* Usage Info */}
+      {/* Enhanced Usage Info */}
       <View style={styles.infoContainer}>
+        <Text style={styles.infoTitle}>💡 HOW IT WORKS</Text>
         <Text style={styles.infoText}>
           • Apps charge proportionally: ~{tokensPerMinute} tokens per minute
         </Text>
@@ -491,7 +532,7 @@ export const AppLauncher = ({
           • Tokens charged every second based on actual usage
         </Text>
         <Text style={styles.infoText}>
-          • Apps close automatically when balance runs out
+          • Apps open in new browser tabs for seamless experience
         </Text>
         <Text style={styles.infoText}>
           • Timer stops automatically when you close the app
@@ -508,24 +549,46 @@ const styles = StyleSheet.create({
   } as ViewStyle,
 
   header: {
-    padding: 20,
+    padding: 24,
     backgroundColor: colors.cardBg,
-    borderBottomWidth: 2,
+    borderBottomWidth: 3,
     borderBottomColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   } as ViewStyle,
 
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '900',
     color: colors.primary,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
+    textShadowColor: colors.primary,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
+    letterSpacing: 1,
   } as TextStyle,
 
+  balanceContainer: {
+    alignItems: 'center',
+  } as ViewStyle,
+
   balanceInfo: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.text,
     textAlign: 'center',
+    marginBottom: 4,
+  } as TextStyle,
+
+  timeInfo: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    fontWeight: '600',
   } as TextStyle,
 
   gridContainer: {
@@ -542,92 +605,156 @@ const styles = StyleSheet.create({
 
   appItem: {
     backgroundColor: colors.cardBg,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
     width: (screenWidth - 48) / 2,
     marginHorizontal: 4,
     marginVertical: 8,
     borderWidth: 2,
     borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
     // Use boxShadow for web compatibility
     ...(Platform.OS === 'web' ? {
-      boxShadow: `0 0 5px ${colors.primary}30`,
-    } : {
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.3,
-      shadowRadius: 5,
-      elevation: 5,
-    }),
+      boxShadow: `0 4px 15px ${colors.primary}30`,
+    } : {}),
   } as ViewStyle,
 
   appItemDisabled: {
     backgroundColor: colors.disabled,
     borderColor: colors.textSecondary,
     opacity: 0.6,
+    shadowOpacity: 0.1,
+  } as ViewStyle,
+
+  appItemActive: {
+    borderColor: colors.success,
+    backgroundColor: '#0a2a0a',
+    shadowColor: colors.success,
+    ...(Platform.OS === 'web' ? {
+      boxShadow: `0 4px 20px ${colors.success}50`,
+    } : {}),
   } as ViewStyle,
 
   appIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 6,
   } as ViewStyle,
 
   appIconDisabled: {
     backgroundColor: colors.textSecondary,
+    shadowOpacity: 0.2,
+  } as ViewStyle,
+
+  appIconActive: {
+    backgroundColor: colors.success,
+    shadowColor: colors.success,
   } as ViewStyle,
 
   appIcon: {
-    fontSize: 32,
+    fontSize: 36,
+  } as TextStyle,
+
+  appIconActiveText: {
+    textShadowColor: colors.success,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   } as TextStyle,
 
   appName: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '800',
     color: colors.text,
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   } as TextStyle,
 
   appNameDisabled: {
     color: colors.textSecondary,
   } as TextStyle,
 
+  appNameActive: {
+    color: colors.success,
+    textShadowColor: colors.success,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 5,
+  } as TextStyle,
+
   appCategory: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
+    fontWeight: '600',
   } as TextStyle,
 
   appCategoryDisabled: {
     color: colors.disabled,
   } as TextStyle,
 
+  appCategoryActive: {
+    color: colors.success,
+  } as TextStyle,
+
+  costContainer: {
+    alignItems: 'center',
+  } as ViewStyle,
+
   costText: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.accent,
     textAlign: 'center',
-    fontWeight: '600',
+    fontWeight: '700',
+    marginBottom: 2,
   } as TextStyle,
 
-  runningText: {
-    fontSize: 12,
-    color: colors.success,
-    textAlign: 'center',
-    fontWeight: 'bold',
-  } as TextStyle,
-
-  blockedText: {
+  costSubtext: {
     fontSize: 11,
     color: colors.textSecondary,
     textAlign: 'center',
     fontStyle: 'italic',
+  } as TextStyle,
+
+  activeStatusContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  } as ViewStyle,
+
+  runningText: {
+    fontSize: 13,
+    color: colors.success,
+    textAlign: 'center',
+    fontWeight: '800',
+  } as TextStyle,
+
+  pulsingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.success,
+  } as ViewStyle,
+
+  blockedText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    fontWeight: '600',
   } as TextStyle,
 
   // Timer Display Styles
@@ -724,23 +851,75 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.error,
     textAlign: 'center',
-    fontWeight: '600',
+    fontWeight: '700',
   } as TextStyle,
 
   warningContainer: {
     backgroundColor: colors.error,
-    padding: 16,
+    padding: 20,
     marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 8,
+    marginVertical: 12,
+    borderRadius: 12,
+    shadowColor: colors.error,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
   } as ViewStyle,
 
   warningText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '900',
     color: colors.text,
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
+  } as TextStyle,
+
+  warningSubtext: {
+    fontSize: 15,
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 12,
+    fontWeight: '600',
+  } as TextStyle,
+
+  warningActions: {
+    alignItems: 'center',
+  } as ViewStyle,
+
+  warningActionText: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '700',
+    textAlign: 'center',
+  } as TextStyle,
+
+  infoContainer: {
+    backgroundColor: colors.cardBg,
+    padding: 20,
+    marginHorizontal: 16,
+    marginVertical: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: colors.textSecondary,
+    opacity: 0.8,
+  } as ViewStyle,
+
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.primary,
+    marginBottom: 12,
+    textAlign: 'center',
+    letterSpacing: 1,
+  } as TextStyle,
+
+  infoText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 6,
+    lineHeight: 18,
+    fontWeight: '500',
   } as TextStyle,
 
   appsGrid: {
@@ -753,29 +932,6 @@ const styles = StyleSheet.create({
     width: `${100 / 2 - 2}%`, // 2 columns with spacing
     marginBottom: 16,
   } as ViewStyle,
-
-  warningSubtext: {
-    fontSize: 14,
-    color: colors.text,
-    textAlign: 'center',
-  } as TextStyle,
-
-  infoContainer: {
-    backgroundColor: colors.cardBg,
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.textSecondary,
-  } as ViewStyle,
-
-  infoText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 4,
-    lineHeight: 16,
-  } as TextStyle,
 });
 
 export default AppLauncher;
