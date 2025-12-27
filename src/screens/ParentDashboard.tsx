@@ -21,6 +21,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import { useAuth, useWallet } from '../context';
 import { Transaction, Profile } from '../lib/types';
 import { dbHelpers, realtimeHelpers, getSupabaseClient } from '../lib/supabase';
+import { QuestManagement } from '../components';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -56,6 +57,9 @@ const ParentDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
+  
+  // Quest management modal state
+  const [showQuestManagement, setShowQuestManagement] = useState(false);
   
   // Chart data
   const [earningSpendingData, setEarningSpendingData] = useState<ChartData | null>(null);
@@ -425,6 +429,26 @@ const ParentDashboard: React.FC = () => {
   );
 
   /**
+   * Render management section with quest configuration
+   */
+  const renderManagementSection = () => (
+    <View style={styles.managementSection}>
+      <Text style={styles.sectionTitle}>Management</Text>
+      <View style={styles.managementButtons}>
+        <TouchableOpacity
+          style={styles.managementButton}
+          onPress={() => setShowQuestManagement(true)}
+        >
+          <Text style={styles.managementButtonText}>🎯 Manage Quest Types</Text>
+          <Text style={styles.managementButtonSubtext}>
+            Create, edit, and configure quest rewards
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  /**
    * Render balance overview
    */
   const renderBalanceOverview = () => {
@@ -606,8 +630,15 @@ const ParentDashboard: React.FC = () => {
       {renderConnectionStatus()}
       {renderChildSelector()}
       {renderBalanceOverview()}
+      {renderManagementSection()}
       {renderAnalytics()}
       {renderTransactionHistory()}
+      
+      {/* Quest Management Modal */}
+      <QuestManagement
+        visible={showQuestManagement}
+        onClose={() => setShowQuestManagement(false)}
+      />
     </ScrollView>
   );
 };
@@ -729,6 +760,34 @@ const styles = StyleSheet.create({
     color: '#8892b0',
     fontSize: 10,
     marginTop: 2,
+  },
+  
+  // Management Section Styles
+  managementSection: {
+    marginBottom: 30,
+  },
+  managementButtons: {
+    gap: 15,
+  },
+  managementButton: {
+    backgroundColor: '#1a1a2e',
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#16213e',
+    borderLeftWidth: 4,
+    borderLeftColor: '#00d4ff',
+  },
+  managementButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  managementButtonSubtext: {
+    color: '#8892b0',
+    fontSize: 12,
+    lineHeight: 16,
   },
   
   // Analytics Styles

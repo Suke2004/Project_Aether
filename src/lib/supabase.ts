@@ -341,6 +341,134 @@ export const dbHelpers = {
       throw error;
     }
   },
+
+  /**
+   * Get all quest types (including inactive ones for management)
+   */
+  getAllQuestTypes: async (): Promise<QuestType[]> => {
+    const client = getSupabaseClient();
+    
+    try {
+      const { data, error } = await client
+        .from('quest_types')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Get all quest types error:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Get all quest types failed:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new quest type
+   */
+  createQuestType: async (questType: Omit<QuestType, 'id' | 'created_by'>, createdBy: string): Promise<QuestType> => {
+    const client = getSupabaseClient();
+    
+    try {
+      const { data, error } = await client
+        .from('quest_types')
+        .insert({
+          ...questType,
+          created_by: createdBy,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Create quest type error:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Create quest type failed:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing quest type
+   */
+  updateQuestType: async (questId: string, updates: Partial<Omit<QuestType, 'id' | 'created_by'>>): Promise<QuestType> => {
+    const client = getSupabaseClient();
+    
+    try {
+      const { data, error } = await client
+        .from('quest_types')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', questId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Update quest type error:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Update quest type failed:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a quest type (soft delete by setting is_active to false)
+   */
+  deleteQuestType: async (questId: string): Promise<void> => {
+    const client = getSupabaseClient();
+    
+    try {
+      const { error } = await client
+        .from('quest_types')
+        .update({
+          is_active: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', questId);
+
+      if (error) {
+        console.error('Delete quest type error:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Delete quest type failed:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Permanently delete a quest type (hard delete)
+   */
+  permanentlyDeleteQuestType: async (questId: string): Promise<void> => {
+    const client = getSupabaseClient();
+    
+    try {
+      const { error } = await client
+        .from('quest_types')
+        .delete()
+        .eq('id', questId);
+
+      if (error) {
+        console.error('Permanently delete quest type error:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Permanently delete quest type failed:', error);
+      throw error;
+    }
+  },
 };
 
 /**
