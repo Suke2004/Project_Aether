@@ -6,7 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Context Providers
-import { AuthProvider, useAuth } from './src/context';
+import { AuthProvider, useAuth, ThemeProvider } from './src/context';
 import { WalletProvider } from './src/context';
 
 // Screens
@@ -176,14 +176,16 @@ export default function App() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
-        <AuthProvider>
-          <WalletProvider>
-            <View style={styles.container}>
-              <StatusBar style="light" backgroundColor="#0a0a0a" />
-              <AppNavigator />
-            </View>
-          </WalletProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <WalletProvider>
+              <View style={styles.container}>
+                <StatusBar style="light" backgroundColor="#0a0a0a" />
+                <AppNavigator />
+              </View>
+            </WalletProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
   );

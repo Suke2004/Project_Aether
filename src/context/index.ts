@@ -8,3 +8,6 @@ export { AuthProvider, useAuth, withRoleAccess } from './AuthContext';
 
 // Wallet Context
 export { WalletProvider, useWallet, withWalletAccess } from './WalletContext';
+
+// Theme Context
+export { ThemeProvider, useTheme } from './ThemeContext';
